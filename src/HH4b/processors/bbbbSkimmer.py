@@ -142,7 +142,7 @@ class bbbbSkimmer(SkimmerABC):
         "dr_leptons": 0.4,
     }
 
-    semi_boosted_ak4jets_selection  = {
+    semi_boosted_ak4jets_selection  = { # noqa: RUF012
 	"pt": 30,
 	"eta_max": 2.5,
 	"id": "tight",
