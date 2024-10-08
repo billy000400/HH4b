@@ -877,9 +877,9 @@ class bbbbSkimmer(SkimmerABC):
             # AK4 jet noise filter, jet veto map, 2 ak4 jet pT > 30,  eta<2.5, tight ID
             add_selection("ak4_numjets", (ak.num(jets) >= 2), *selection_args)
 
-            # >= two AK4 jets pass loose WP (Run3Summer22)
+            # >= two AK4 jets pass meidum WP (copied from semilep-tt case)
             add_selection(
-                "ak4jet_btag", (ak.sum(jets.btagDeepFlavB >= 0.0583, axis=1) >= 2), *selection_args
+                "ak4jet_btag", (ak.sum(jets.btagDeepFlavB >= 0.3091, axis=1) >= 2), *selection_args
             )
 
             # 0 veto leptons
