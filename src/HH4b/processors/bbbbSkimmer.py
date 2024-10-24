@@ -241,6 +241,7 @@ class bbbbSkimmer(SkimmerABC):
                     "AK8PFJet420_MassSD30",
                     # resolved
                     "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
+                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",
                 ],
                 "2023BPix": [
                     "AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35",
@@ -252,6 +253,7 @@ class bbbbSkimmer(SkimmerABC):
                     "AK8PFJet420_MassSD30",
                     # resolved
                     "PFHT280_QuadPFJet30_PNet2BTagMean0p55",
+                    "QuadPFJet70_50_40_35_PNet2BTagMean0p65",
                 ],
             },
             "semilep-tt": {
@@ -529,14 +531,7 @@ class bbbbSkimmer(SkimmerABC):
 
         # AK4 objects away from first two fatjets
         if self._region == "semiboosted":
-            ak4_jets_awayfromak8 = objects.ak4_jets_awayfromak8(
-                jets,
-                fatjets_xbb[:, :2],
-                events,
-                **self.semi_boosted_ak4jets_selection,
-                **self.ak4_bjet_lepton_selection,
-                sort_by="nearest",
-            )
+            pass
         else:
             ak4_jets_awayfromak8 = objects.ak4_jets_awayfromak8(
                 jets,
@@ -590,6 +585,10 @@ class bbbbSkimmer(SkimmerABC):
                 "btagPNetQvG": "btagPNetQvG",
                 # "btagRobustParTAK4B": "btagRobustParTAK4B",
             }
+
+        if  self._region == 'semiboosted':
+            AK4JetDeltaRTop3AK8Jets = jets.deltaR(fatjets_xbb[:, 0:3])
+
         if not isData:
             jet_skimvars = {
                 **jet_skimvars,
@@ -600,6 +599,9 @@ class bbbbSkimmer(SkimmerABC):
             f"ak4Jet{key}": pad_val(jets[var], num_jets, axis=1)
             for (var, key) in jet_skimvars.items()
         }
+
+        if self._region == "semiboosted":
+            ak4JetVars['ak4JetDeltaRTop3ak8Jets'] = pad_val(AK4JetDeltaRTop3AK8Jets, num_jets, axis=1)
 
         if len(ak4_jets_awayfromak8) == 2:
             ak4JetAwayVars = {
@@ -650,7 +652,8 @@ class bbbbSkimmer(SkimmerABC):
         print("Jet vars", f"{time.time() - start:.2f}")
 
         # JEC and JMSR
-        if self._region == "signal" and isJECs:
+        # if ((self._region == "signal") or (self._region == 'semiboosted')) and isJECs:
+        if (self._region == "signal") and isJECs:
             # Jet JEC variables
             for var in ["pt"]:
                 key = self.skim_vars["Jet"][var]
@@ -777,10 +780,16 @@ class bbbbSkimmer(SkimmerABC):
                                 vbf_jets[shift][vari][var], 2, axis=1
                             )
 
-        skimmed_events = {
-            **skimmed_events,
-            **vbfJetVars,
-        }
+            skimmed_events = {
+                **skimmed_events,
+                **vbfJetVars,
+            }
+
+        if self._region == "semiboosted":
+            skimmed_events = {
+                **skimmed_events,
+                **ak4JetVars,
+            }
 
         if self._region == "semilep-tt":
             # concatenate leptons
@@ -972,6 +981,7 @@ class bbbbSkimmer(SkimmerABC):
         }
 
         dataframe = self.to_pandas(skimmed_events)
+        print('printing dataframe', dataframe)
         fname = events.behavior["__events_factory__"]._partition_key.replace("/", "_") + ".parquet"
         self.dump_table(dataframe, fname)
 
