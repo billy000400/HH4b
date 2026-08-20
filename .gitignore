@@ -166,6 +166,8 @@ test.ipynb
 outfiles
 plots
 cards
+!tests/fixtures/cards/
+!tests/fixtures/cards/**
 docker_stderror
 /*.jdl
 /*.sh
@@ -179,6 +181,8 @@ src/HH4b/boosted/**/*.png
 src/HH4b/boosted/**/*.pdf
 src/HH4b/boosted/**/*roc_dict.pkl
 src/HH4b/boosted/**/*.pkl
+!src/HH4b/corrections/data/pileup/*.root
+src/HH4b/processors/skimmer_plots
 
 running_jobs.txt
 
@@ -187,5 +191,13 @@ running_jobs.txt
 .local/
 
 data/.sites_map.json
+data/nanov15/CMSSW*
+data/nanov15/*.json
 
 *.C
+
+# Local experiment logs and benchmarks
+lab_notebook/
+bench/
+bench_memory.sh
+bench_diff_templates.py

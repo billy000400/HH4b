@@ -4,6 +4,8 @@ General utilities for postprocessing.
 Author: Raghav Kansal
 """
 
+# ruff: noqa: PTH208
+
 from __future__ import annotations
 
 import contextlib
@@ -21,6 +23,8 @@ import hist
 import numpy as np
 import pandas as pd
 import vector
+from coffea.analysis_tools import PackedSelection
+from coffea.processor.accumulator import accumulate
 from hist import Hist
 
 from HH4b.xsecs import xsecs
@@ -39,6 +43,7 @@ from .hh_vars import (
 )
 
 logger = logging.getLogger("HH4b.utils")
+logger.setLevel(logging.DEBUG)
 
 MAIN_DIR = "./"
 CUT_MAX_VAL = 9999.0
@@ -97,7 +102,6 @@ def timer():
 
 
 def remove_empty_parquets(samples_dir, year):
-    from os import listdir
 
     full_samples_list = listdir(f"{samples_dir}/{year}")
     print("Checking for empty parquets")
@@ -115,8 +119,6 @@ def remove_empty_parquets(samples_dir, year):
 
 def get_cutflow(pickles_path, year, sample_name):
     """Accumulates cutflow over all pickles in ``pickles_path`` directory"""
-    from coffea.processor.accumulator import accumulate
-
     out_pickles = listdir(pickles_path)
 
     file_name = out_pickles[0]
@@ -163,8 +165,6 @@ def get_nevents(pickles_path, year, sample_name):
 
 def get_pickles(pickles_path, year, sample_name):
     """Accumulates all pickles in ``pickles_path`` directory"""
-    from coffea.processor.accumulator import accumulate
-
     out_pickles = [f for f in listdir(pickles_path) if f != ".DS_Store"]
 
     file_name = out_pickles[0]
@@ -188,15 +188,20 @@ def check_selector(sample: str, selector: str | list[str]):
     if not isinstance(selector, (list, tuple)):
         selector = [selector]
 
+    # Case-insensitive matching: the v15 skimmer is inconsistent across years
+    # (e.g. ttHto2B_M-125 vs TTHto2B_M-125).  CMS sample names don't collide by
+    # case alone, so lowercasing both sides is safe.
+    sample_lc = sample.lower()
     for s in selector:
+        s = s.lower()  # noqa: PLW2901
         if s.endswith("?"):
-            if s[:-1] == sample:
+            if s[:-1] == sample_lc:
                 return True
         elif s.startswith("*"):
-            if s[1:] in sample:
+            if s[1:] in sample_lc:
                 return True
         else:
-            if sample.startswith(s):
+            if sample_lc.startswith(s):
                 return True
 
     return False
@@ -212,6 +217,29 @@ def format_columns(columns: list):
         for i in range(num_columns):
             ret_columns.append(f"('{key}', '{i}')")
     return ret_columns
+
+
+def _resolve_xsec_key(sample: str, xsecs_dict: dict) -> str:
+    if sample in xsecs_dict:
+        return sample
+
+    aliases = [
+        sample.replace("QCD-4Jets_HT-", "QCD_HT-"),
+        sample.replace("TTHto2B_M-125", "ttHto2B_M-125"),
+    ]
+    for alias in aliases:
+        if alias in xsecs_dict:
+            return alias
+
+    # Last fallback: case-insensitive exact key match.
+    lowered = sample.lower()
+    ci_matches = [k for k in xsecs_dict if k.lower() == lowered]
+    if len(ci_matches) == 1:
+        return ci_matches[0]
+
+    raise KeyError(
+        f"No xsec entry for sample '{sample}' (tried aliases {aliases}, ci_matches={ci_matches})"
+    )
 
 
 def _normalize_weights(
@@ -231,17 +259,27 @@ def _normalize_weights(
 
     # check weights are scaled
     if "weight_noxsec" in events and np.all(events["weight"] == events["weight_noxsec"]):
-        # print(sample)
-        if "VBF" in sample:
-            warnings.warn(
-                f"Temporarily scaling {sample} by its xsec and lumi - remember to remove after fixing in the processor!",
-                stacklevel=0,
-            )
-            events["weight"] = events["weight"] * xsecs[sample] * LUMI[year]
-        else:
-            raise ValueError(f"{sample} has not been scaled by its xsec and lumi!")
+        xsec_key = _resolve_xsec_key(sample, xsecs)
+        warnings.warn(f"{sample} has not been scaled by its xsec and lumi!", stacklevel=0)
+        events["weight"] = events["weight"].to_numpy() * xsecs[xsec_key] * LUMI[year]
+        warnings.warn(
+            f"Temporarily scaling {sample} by its xsec and lumi - remember to remove after fixing in the processor!",
+            stacklevel=0,
+        )
+
+        # if ("VBF" in sample) or ("GluGlutoHHto4B" in sample):
+        #     warnings.warn(
+        #         f"Temporarily scaling {sample} by its xsec and lumi - remember to remove after fixing in the processor!",
+        #         stacklevel=0,
+        #     )
+        #     events["weight"] = events["weight"].to_numpy() * xsecs[sample] * LUMI[year]
+        # else:
+        #     raise ValueError(f"{sample} has not been scaled by its xsec and lumi!")
 
     events["finalWeight"] = events["weight"] / totals["np_nominal"]
+    if sample in xsecs:
+        events["xsecWeight"] = xsecs[sample] / totals["np_nominal"]
+        events["lumiwgt"] = LUMI[year]
 
     if not variations:
         return
@@ -269,7 +307,19 @@ def _normalize_weights(
     for wkey in ["scale_weights", "pdf_weights"]:
         if wkey in events:
             # .to_numpy() makes it way faster
-            events[wkey] = events[wkey].to_numpy() / totals[f"np_{wkey}"]
+            weights = events[wkey].to_numpy()
+            n_weights = weights.shape[1]
+            events[wkey] = weights / totals[f"np_{wkey}"][:n_weights]
+            if (
+                "weight_noxsec" in events
+                and np.all(events["weight"] == events["weight_noxsec"])
+                and "VBF" in sample
+            ):
+                warnings.warn(
+                    f"Temporarily scaling {sample} by its xsec and lumi - remember to remove after fixing in the processor!",
+                    stacklevel=0,
+                )
+                events[wkey] = events[wkey].to_numpy() * xsecs[sample] * LUMI[year]
 
 
 def _reorder_txbb(events: pd.DataFrame, txbb):
@@ -346,10 +396,25 @@ def load_samples(
                 continue
 
             logger.debug(f"Loading {sample}")
+
             try:
-                events = pd.read_parquet(parquet_path, filters=filters, columns=load_columns)
-            except Exception:
-                warnings.warn(f"No events for {sample}!", stacklevel=1)
+                non_empty_passed_list = []
+                for parquet_file in parquet_path.glob("*.parquet"):
+                    # Read with column projection and filters upfront; check empty afterwards.
+                    # Previously the file was read twice: once with no args to test emptiness,
+                    # then again with columns/filters — doubling I/O per file.
+                    df_sample = pd.read_parquet(parquet_file, filters=filters, columns=load_columns)
+                    if not df_sample.empty:
+                        non_empty_passed_list.append(df_sample)
+                if not non_empty_passed_list:
+                    warnings.warn(f"No events after filtering for {sample}!", stacklevel=1)
+                    continue
+                events = pd.concat(non_empty_passed_list, ignore_index=True)
+            except Exception as e:
+                logger.error(f"Error loading {sample}: {e}")
+                warnings.warn(
+                    f"Can't read file with requested columns/filters for {sample}!", stacklevel=1
+                )
                 continue
 
             # no events?
@@ -386,6 +451,8 @@ def load_samples(
 
         if len(events_dict[label]):
             events_dict[label] = pd.concat(events_dict[label])
+            # Deduplicate columns that can arise when concatenating multiple sub-samples
+            events_dict[label] = events_dict[label].loc[:, ~events_dict[label].columns.duplicated()]
         else:
             del events_dict[label]
 
@@ -406,6 +473,80 @@ def add_to_cutflow(
 def get_key_index(h: Hist, axis_name: str):
     """Get the index of a key in a Hist's first axis"""
     return np.where(np.array(list(h.axes[0])) == axis_name)[0][0]
+
+
+def rename_sample_axis(h: Hist, suffix: str) -> Hist:
+    """Return a copy of ``h`` with ``suffix`` appended to every label of its first
+    (``Sample``) axis. All other axes, values, variances and flow bins are preserved.
+    """
+    new_labels = [f"{sample}{suffix}" for sample in h.axes[0]]
+    reth = Hist(
+        hist.axis.StrCategory(new_labels, name=h.axes[0].name),
+        *h.axes[1:],
+        storage=h.storage_type(),
+    )
+    reth.view(flow=True)[...] = h.view(flow=True)
+    return reth
+
+
+def combine_hists(*hists: Hist) -> Hist:
+    """Concatenate histograms along their first (``Sample``) StrCategory axis.
+
+    All inputs must share identical non-``Sample`` axes, and sample labels must be
+    unique across inputs (duplicates would make name-based indexing ambiguous).
+    Values, variances and flow bins are carried through unchanged.
+    """
+    if not hists:
+        raise ValueError("combine_hists requires at least one histogram")
+
+    ref_axes = hists[0].axes[1:]
+    for h in hists[1:]:
+        if h.axes[1:] != ref_axes:
+            raise ValueError("all histograms must share identical non-Sample axes")
+
+    csamples = []
+    for h in hists:
+        csamples += list(h.axes[0])
+    if len(set(csamples)) != len(csamples):
+        raise ValueError(f"duplicate sample names across inputs: {csamples}")
+
+    reth = Hist(
+        hist.axis.StrCategory(csamples, name=hists[0].axes[0].name),
+        *ref_axes,
+        storage=hists[0].storage_type(),
+    )
+    for h in hists:
+        for sample in h.axes[0]:
+            reth.view(flow=True)[get_key_index(reth, sample), ...] = h[sample, ...].view(flow=True)
+
+    return reth
+
+
+def align_sample_axis(h: Hist, order: list[str], fill_missing: bool = False) -> Hist:
+    """Return a copy of ``h`` with its first (``Sample``) axis reordered to ``order``.
+
+    Useful for making histograms whose Sample axes hold the same labels in a different
+    order (a reprocessed year), or a different set (a year missing some samples),
+    mergeable with ``+`` / :func:`sum`. If ``fill_missing`` is True, labels in
+    ``order`` absent from ``h`` are created as empty (zero) bins; otherwise a missing
+    label raises ``ValueError``.
+    """
+    labels = set(h.axes[0])
+    if not fill_missing:
+        missing = [sample for sample in order if sample not in labels]
+        if missing:
+            raise ValueError(f"cannot align: samples not present in histogram: {missing}")
+
+    reth = Hist(
+        hist.axis.StrCategory(order, name=h.axes[0].name),
+        *h.axes[1:],
+        storage=h.storage_type(),
+    )
+    for sample in order:
+        if sample in labels:
+            reth.view(flow=True)[get_key_index(reth, sample), ...] = h[sample, ...].view(flow=True)
+
+    return reth
 
 
 def getParticles(particle_list, particle_type):
@@ -515,8 +656,6 @@ def make_vector(events: dict, name: str, mask=None, mstring="Mass"):
         name (str): object string e.g. ak8FatJet
         mask (bool array, optional): array selecting desired events
     """
-    import vector
-
     if mask is None:
         return vector.array(
             {
@@ -761,11 +900,8 @@ def _var_selection(
 
     # OR the different vars
     for cutvar in cut_vars:
-        if (
-            jshift in jmsr_shifts
-            and sample in jmsr_keys
-            or jshift in jec_shifts
-            and sample in syst_keys
+        if (jshift in jmsr_shifts and sample in jmsr_keys) or (
+            jshift in jec_shifts and sample in syst_keys
         ):
             var = check_get_jec_var(cutvar, jshift)
         else:
@@ -826,8 +962,6 @@ def make_selection(
         selection (dict): dict of each sample's cut boolean arrays.
         cutflow (dict): dict of each sample's yields after each cut.
     """
-    from coffea.analysis_tools import PackedSelection
-
     selection = {} if selection is None else deepcopy(selection)
 
     cutflow = {}
@@ -967,3 +1101,17 @@ def multi_rebin_hist(h: Hist, axes_edges: dict[str, list[float]], flow: bool = T
         h = remove_hist_overflow(h)
 
     return h
+
+
+def discretize_var(var_array, bins=None):
+
+    if bins is None:
+        bins = [0, 0.8, 0.9, 0.94, 0.97, 0.99, 1]
+
+    # discretize the variable into len(bins)-1  integer categories
+    bin_indices = np.digitize(var_array, bins)
+
+    # clip just to be safe
+    bin_indices = np.clip(bin_indices, 1, len(bins) - 1)
+
+    return bin_indices

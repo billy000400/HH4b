@@ -6,7 +6,7 @@ Loosely based on https://github.com/jennetd/hbb-coffea/blob/master/boostedhiggs/
 Most corrections retrieved from the cms-nanoAOD repo:
 See https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/
 
-Authors: Raghav Kansal, Cristina Suarez
+Authors: Raghav Kansal, Cristina Suarez, Zichun Hao
 """
 
 from __future__ import annotations
@@ -14,9 +14,9 @@ from __future__ import annotations
 import gzip
 import pathlib
 import pickle
-import random
 
 import awkward as ak
+import cachetools
 import correctionlib
 import numpy as np
 import uproot
@@ -63,12 +63,15 @@ def get_pog_json(obj: str, year: str) -> str:
         print(f"No json for {obj}")
 
     year = get_UL_year(year) if year == "2018" else year
-    if "2022" in year or "2023" in year:
+    if "2022" in year or "2023" in year or "2024" in year or "2025" in year:
         year = {
             "2022": "2022_Summer22",
             "2022EE": "2022_Summer22EE",
             "2023": "2023_Summer23",
             "2023BPix": "2023_Summer23BPix",
+            # "2024": "2024_Winter24",
+            "2024": "2024_Summer24",
+            "2025": "2025_Summer25",
         }[year]
     return f"{pog_correction_path}/POG/{pog_json[0]}/{year}/{pog_json[1]}"
 
@@ -100,6 +103,23 @@ def add_pileup_weight(weights: Weights, year: str, nPU: np.ndarray, dataset: str
         sf = pileup_correction[nPU]
         # no uncertainties
         weights.add("pileup", sf)
+
+    elif "2024" in year:
+        # public pileup corrections not available yet
+        path_pileup = package_path + "/corrections/data/pileup/PileupReweight_Summer24.root"
+        corr_file = uproot.open(path_pileup)
+
+        pileup_MC = corr_file["simul_hist"].to_numpy()[0]
+
+        pileup_data_nom = corr_file["data_hist"].to_numpy()[0]
+        pileup_data_up = corr_file["data_hist_up"].to_numpy()[0]
+        pileup_data_down = corr_file["data_hist_down"].to_numpy()[0]
+
+        sf_nom = np.clip(pileup_data_nom / pileup_MC, 0, 10)[nPU]
+        sf_up = np.clip(pileup_data_up / pileup_MC, 0, 10)[nPU]
+        sf_down = np.clip(pileup_data_down / pileup_MC, 0, 10)[nPU]
+
+        weights.add("pileup", sf_nom, sf_up, sf_down)
 
     else:
         # https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun3
@@ -223,7 +243,8 @@ def get_scale_weights(events):
 
 class JECs:
     def __init__(self, year):
-        if year in ["2022", "2022EE", "2023", "2023BPix"]:
+        # TODO: add more years when available
+        if year in ["2022", "2022EE", "2023", "2023BPix", "2024", "2025"]:
             jec_compiled = package_path + "/corrections/jec_compiled.pkl.gz"
         elif year in ["2016", "2016APV", "2017", "2018"]:
             jec_compiled = package_path + "/corrections/jec_compiled_run2.pkl.gz"
@@ -275,7 +296,11 @@ class JECs:
         jets = self._add_jec_variables(jets, rho, isData)
 
         apply_jecs = ak.any(jets.pt) if (applyData or not isData) else False
-        if "v12" not in nano_version:
+        if (
+            ("v12" not in nano_version)
+            and ("v14" not in nano_version)
+            and ("v15" not in nano_version)
+        ):
             apply_jecs = False
         if not apply_jecs:
             return jets, None
@@ -288,8 +313,6 @@ class JECs:
         if self.jet_factory[jet_factory_str] is None:
             print("No factory available")
             return jets, None
-
-        import cachetools
 
         jec_cache = cachetools.Cache(np.inf)
 
@@ -306,6 +329,10 @@ class JECs:
                 corr_key = "2023_runCv4" if "Run2023Cv4" in dataset else "2023_runCv123"
             elif year == "2023BPix":
                 corr_key = "2023BPix_runD"
+            elif year == "2024":
+                corr_key = "2024"
+            elif year == "2025":
+                corr_key = "2025"
             else:
                 print(dataset, year)
                 print("warning, no valid dataset, JECs won't be applied to data")
@@ -363,13 +390,10 @@ def get_jmsr(
             jmr_nom, jmr_down, jmr_up = ((smearing * max(jmr[i] - 1, 0) + 1) for i in range(3))
             jms_nom, jms_down, jms_up = jms
 
-            corr_mass_JMRUp = random.gauss(0.0, jmr[2] - 1.0)
-            corr_mass = max(jmr[0] - 1.0, 0.0) / (jmr[2] - 1.0) * corr_mass_JMRUp
-
             mass_jms = mass * jms_nom
             mass_jmr = mass * jmr_nom
 
-            tdict[""] = mass * jms_nom * (1.0 + corr_mass)
+            tdict[""] = mass * jms_nom * jmr_nom
             tdict["JMS_down"] = mass_jmr * jms_down
             tdict["JMS_up"] = mass_jmr * jms_up
             tdict["JMR_down"] = mass_jms * jmr_down
@@ -389,6 +413,10 @@ def get_jetveto_event(jets: JetArray, year: str):
     """
     Get event selection that rejects events with jets in the veto map
     """
+    if year == "2025":
+        # no veto map for 2025 yet
+        # TODO: update when available
+        return np.ones(len(jets), dtype=bool)
 
     # correction: Non-zero value for (eta, phi) indicates that the region is vetoed
     cset = correctionlib.CorrectionSet.from_file(get_pog_json("jetveto", year))
@@ -405,6 +433,10 @@ def get_jetveto_event(jets: JetArray, year: str):
         "2022EE": "Summer22EE_23Sep2023_RunEFG_V1",
         "2023": "Summer23Prompt23_RunC_V1",
         "2023BPix": "Summer23BPixPrompt23_RunD_V1",
+        # "2024": "Winter24Prompt2024BCDEFGHI_V1",
+        "2024": "Summer24Prompt24_RunBCDEFGHI_V1",
+        # https://github.com/cms-jet/JECDatabase/tree/master/jet_veto_maps/Winter25Prompt25
+        # "2025": "Winter25Prompt25_RunCDE_V1",
     }[year]
 
     jet_veto = get_veto(j, nj, corr_str) > 0

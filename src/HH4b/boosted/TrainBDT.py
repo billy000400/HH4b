@@ -23,6 +23,7 @@ from HH4b import hh_vars, plotting
 from HH4b.hh_vars import samples_run3
 from HH4b.log_utils import log_config
 from HH4b.postprocessing import (
+    HLTs,
     get_evt_testing,
     load_run3_samples,
 )
@@ -59,16 +60,19 @@ txbb_preselection = {
     "bbFatJetPNetTXbb": 0.3,
     "bbFatJetPNetTXbbLegacy": 0.8,
     "bbFatJetParTTXbb": 0.3,
+    "bbFatJetParT3TXbb": 0.3,
 }
 msd1_preselection = {
     "bbFatJetPNetTXbb": 40,
     "bbFatJetPNetTXbbLegacy": 40,
     "bbFatJetParTTXbb": 40,
+    "bbFatJetParT3TXbb": 40,
 }
 msd2_preselection = {
     "bbFatJetPNetTXbb": 30,
     "bbFatJetPNetTXbbLegacy": 0,
     "bbFatJetParTTXbb": 30,
+    "bbFatJetParT3TXbb": 30,
 }
 
 control_plot_vars = [
@@ -104,16 +108,37 @@ control_plot_vars = [
 ]
 
 # do not include small qcd bins
+# QCD_HT for 2024, QCD-4Jets_HT for 2022/2023
 for year in samples_run3:
     samples_run3[year]["qcd"] = [
+        "QCD_HT-100to200",
+        "QCD_HT-200to400",
+        "QCD_HT-400to600",
+        "QCD_HT-600to800",
+        "QCD_HT-800to1000",
         "QCD_HT-1000to1200",
         "QCD_HT-1200to1500",
         "QCD_HT-1500to2000",
         "QCD_HT-2000",
-        # "QCD_HT-200to400",
-        "QCD_HT-400to600",
-        "QCD_HT-600to800",
-        "QCD_HT-800to1000",
+        "QCD-4Jets_HT-100to200",
+        "QCD-4Jets_HT-200to400",
+        "QCD-4Jets_HT-400to600",
+        "QCD-4Jets_HT-600to800",
+        "QCD-4Jets_HT-800to1000",
+        "QCD-4Jets_HT-1000to1200",
+        "QCD-4Jets_HT-1200to1500",
+        "QCD-4Jets_HT-1500to2000",
+        "QCD-4Jets_HT-2000",
+    ]
+    samples_run3[year]["ttbar"] = [
+        "TTto2L2Nu",
+        "TTto4Q",
+        "TTtoLNu2Q",
+    ]
+    samples_run3[year]["diboson"] = [
+        "WW",
+        "WZ",
+        "ZZ",
     ]
 
 
@@ -121,15 +146,15 @@ def get_legtitle(txbb_str):
     title = r"FatJet p$_T^{(0,1)}$ > 250 GeV" + "\n"
     title += "$T_{Xbb}^{0}$ >" + f"{txbb_preselection[txbb_str]}"
 
-    if "Legacy" in txbb_str:
+    if "legacy" in txbb_str.lower():
         title += "\n" + "PNet Legacy"
-    elif "ParT" in txbb_str:
+    elif "part" in txbb_str.lower():
         title += "\n" + "GloParTv2"
     else:
         title += "\n" + "PNet 103X"
 
     title += "\n" + r"m$_{reg}$ > 50 GeV"
-    if "Legacy" not in txbb_str:
+    if "legacy" not in txbb_str.lower():
         title += "\n" + r"m$_{SD}^{0}$ > " + f"{msd1_preselection[txbb_str]} GeV"
         title += "\n" + r"m$_{SD}^{1}$ > " + f"{msd2_preselection[txbb_str]} GeV"
 
@@ -162,6 +187,10 @@ def apply_cuts(events_dict, txbb_str, mass_str):
             & (mass1 > 50)
             & (mass2 > 50)
         ].copy()
+        txbb1 = events_dict[key][txbb_str][0]
+        mass1 = events_dict[key][mass_str][0]
+        mass2 = events_dict[key][mass_str][1]
+        # add msd > 40 cut for the first jet FIXME: replace this by the trigobj matched jet
 
     return events_dict
 
@@ -184,10 +213,12 @@ def preprocess_data(
     )
 
     training_keys = train_keys.copy()
-    for key in training_keys:
-        if key not in events_dict:
-            logger.info(f"{key} not in events_dict, removing...")
-            training_keys.remove(key)
+    missing_keys = [key for key in training_keys if key not in events_dict]
+    for key in missing_keys:
+        logger.info(f"{key} not in events_dict, removing...")
+    training_keys = [key for key in training_keys if key in events_dict]
+    args.sig_keys = [key for key in args.sig_keys if key in events_dict]
+    args.bg_keys = [key for key in args.bg_keys if key in events_dict]
 
     logger.info(f"Keys in events_dict {events_dict.keys()}")
     logger.info(f"Training keys {training_keys}")
@@ -206,8 +237,8 @@ def preprocess_data(
         keys=training_keys,
     )
 
-    for key in weights_bdt:
-        logger.info(f"Total {key} pre-normalization: {np.sum(weights_bdt[key]):.3f}")
+    for key, weight_bdt in weights_bdt.items():
+        logger.info(f"Total {key} pre-normalization: {np.sum(weight_bdt):.3f}")
 
     # weights
     if run2_wapproach:
@@ -250,6 +281,12 @@ def preprocess_data(
 
         for key in training_keys:
             logger.info(f"Total {key} post-normalization: {events.loc[key, 'weight'].sum():.3f}")
+
+    for key in training_keys:
+        raw_weight = np.sum(weights_bdt[key])
+        scaled_weight = events.loc[key, "weight"].sum()
+        ratio = scaled_weight / raw_weight if raw_weight else float("inf")
+        logger.info(f"Class scaling {key}: {raw_weight:.3f} -> {scaled_weight:.3f} (x{ratio:.3f})")
 
     # Define target
     events["target"] = 0  # Default to 0 (background)
@@ -520,9 +557,9 @@ def evaluate_model(
 
         h_bdt = hist.Hist(bdt_axis, cat_axis)
         h_bdt_weight = hist.Hist(bdt_axis, cat_axis)
-        for key in scores:
-            h_bdt.fill(bdt=scores[key], cat=key)
-            h_bdt_weight.fill(scores[key], key, weight=weights[key])
+        for key, score in scores.items():
+            h_bdt.fill(bdt=score, cat=key)
+            h_bdt_weight.fill(score, key, weight=weights[key])
 
         hists = {
             "weight": h_bdt_weight,
@@ -660,7 +697,8 @@ def evaluate_model(
             ax.set_ylabel("Background efficiency")
 
             if log:
-                ax.set_xlim([0.0, 0.6])
+                # ax.set_xlim([0.0, 0.6])
+                ax.set_xlim([0.0, 1.0])
                 ax.set_ylim([1e-5, 1e-1])
                 ax.set_yscale("log")
             else:
@@ -771,12 +809,11 @@ def evaluate_model(
     for txbb_cut in txbb_cuts:
         hist_h2 = hist.Hist(h2_mass_axis, cut_axis, cat_axis)
         hist_h2_msd = hist.Hist(h2_msd_axis, cut_axis, cat_axis)
-        for key in txbb_dict:
+        for key, h2_txbb in txbb_dict.items():
             if key not in training_keys:
                 continue
             h2_mass = mass_dict[key]
             h2_msd = msd_dict[key]
-            h2_txbb = txbb_dict[key]
             for cut in bdt_cuts:
                 mask = (scores[key] >= cut) & (h2_txbb >= txbb_cut)
                 hist_h2.fill(h2_mass[mask], str(cut), key)
@@ -790,6 +827,8 @@ def evaluate_model(
             if key not in training_keys:
                 continue
             for hkey, h in hists.items():
+                if key not in h.axes["cat"]:
+                    continue
                 fig, ax = plt.subplots(1, 1, figsize=(12, 8))
                 for cut in bdt_cuts:
                     hep.histplot(
@@ -1129,11 +1168,12 @@ def main(args):
             year,
             samples_run3,
             reorder_txbb=True,
-            txbb_str=args.txbb_str,
+            # txbb_str=args.txbb_str,
             load_systematics=False,
             txbb_version=args.txbb,
             scale_and_smear=False,  # TODO: train with scale and smear corrections
             mass_str=args.mass_str,
+            bdt_version=args.config_name,
         )
 
         if args.apply_cuts:
@@ -1143,6 +1183,16 @@ def main(args):
                 args.txbb_str,
                 args.mass_str,
             )
+
+        # apply trigger selection (skimmer does not apply trigger for signal region MC)
+        hlt_cols = [hlt for hlt in HLTs[year]]  # noqa: C416
+        for key in list(events_dict_years[year].keys()):
+            n_before = len(events_dict_years[year][key])
+            trigger_mask = events_dict_years[year][key][
+                [col for col in events_dict_years[year][key].columns if col[0] in hlt_cols]
+            ].any(axis=1)
+            events_dict_years[year][key] = events_dict_years[year][key][trigger_mask]
+            logger.info(f"Trigger: {key}: {len(events_dict_years[year][key])} / {n_before} pass")
 
         # concatenate data
         # if doing multiclass classification, encode each process separately
@@ -1179,6 +1229,9 @@ def main(args):
         for key in training_keys:
             if key in events_dict_years[year]:
                 np.save(f"{model_dir}/inferences/{year}/evt_{key}.npy", ev_test.loc[key])
+
+    # update training_keys after preprocess_data may have filtered args.sig_keys/bg_keys
+    training_keys = args.sig_keys + args.bg_keys
 
     X_train_combined = get_combined(X_train)
     X_test_combined = get_combined(X_test)
@@ -1265,11 +1318,12 @@ def main(args):
             year,
             samples_run3,
             reorder_txbb=True,
-            txbb_str=args.txbb_str,
+            # txbb_str=args.txbb_str,
             load_systematics=False,
             txbb_version=args.txbb,
             scale_and_smear=False,
             mass_str=args.mass_str,
+            bdt_version=args.config_name,
         )
         if args.apply_cuts:
             events_dict[year] = apply_cuts(
@@ -1278,17 +1332,18 @@ def main(args):
                 args.mass_str,
             )
 
-    plot_allyears(
-        events_dict,
-        model,
-        model_dir,
-        args.config_name,
-        args.multiclass,
-        args.sig_keys,
-        args.bg_keys,
-        args.txbb_str,
-        args.mass_str,
-    )
+    if args.plot_allyears:
+        plot_allyears(
+            events_dict,
+            model,
+            model_dir,
+            args.config_name,
+            args.multiclass,
+            args.sig_keys,
+            args.bg_keys,
+            args.txbb_str,
+            args.mass_str,
+        )
 
 
 if __name__ == "__main__":
@@ -1298,7 +1353,7 @@ if __name__ == "__main__":
         nargs="+",
         type=str,
         default=["2022EE"],
-        choices=hh_vars.years,
+        choices=hh_vars.years + ["2022-2023"],
         help="years to train on",
     )
     parser.add_argument(
@@ -1334,7 +1389,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--txbb",
-        choices=["pnet-v12", "pnet-legacy", "glopart-v2"],
+        choices=["pnet-v12", "pnet-legacy", "glopart-v2", "glopart-v3"],
         help="txbb version to be used for cuts and txbb performance comparison",
         required=True,
     )
@@ -1345,6 +1400,8 @@ if __name__ == "__main__":
             "bbFatJetPNetMassLegacy",
             "bbFatJetMsd",
             "bbFatJetParTmassVis",
+            "bbFatJetParT3massX2p",
+            "bbFatJetParT3massGeneric",
         ],
         help="txbb mass",
         required=True,
@@ -1370,12 +1427,14 @@ if __name__ == "__main__":
     add_bool_arg(parser, "run2-wapproach", "Run2 weight approach", default=False)
     add_bool_arg(parser, "txbb-plots", "Make TXbb plots", default=True)
     add_bool_arg(parser, "apply-cuts", "Apply cuts", default=True)
+    add_bool_arg(parser, "plot-allyears", "Plot histograms for all years", default=False)
 
     args = parser.parse_args()
     args.txbb_str = {
         "pnet-v12": "bbFatJetPNetTXbb",
         "pnet-legacy": "bbFatJetPNetTXbbLegacy",
         "glopart-v2": "bbFatJetParTTXbb",
+        "glopart-v3": "bbFatJetParT3TXbb",
     }[args.txbb]
     args.mass_str = args.mass
 

@@ -5,18 +5,18 @@ ci:
 
 repos:
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: "24.3.0"
+    rev: "26.5.1"
     hooks:
       - id: black-jupyter
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: "1.16.0"
+    rev: "1.20.0"
     hooks:
       - id: blacken-docs
         additional_dependencies: [black==23.*]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.5.0"
+    rev: "v6.0.0"
     hooks:
       - id: check-added-large-files
         args: ["--maxkb=10000"]
@@ -26,11 +26,15 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: end-of-file-fixer
+        # can corrupt json files if they have too many lines
+        exclude: '^data/.*\.json$'
       - id: mixed-line-ending
       - id: name-tests-test
         args: ["--pytest-test-first"]
       - id: requirements-txt-fixer
       - id: trailing-whitespace
+        # can corrupt json files if they have too many lines
+        exclude: '^data/.*\.json$'
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
@@ -47,9 +51,10 @@ repos:
   #       args: [--prose-wrap=always]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.3.4"
+    rev: "v0.15.20"
     hooks:
       - id: ruff
+        types_or: [ python, pyi ]
         args: ["--fix", "--show-fixes"]
         exclude: ^data/rucio_utils.py|^src/HH4b/corrections/(data|makePUReWeightJSON.py)
 
@@ -63,14 +68,14 @@ repos:
   #         - pytest
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.6"
+    rev: "v2.4.2"
     hooks:
       - id: codespell
         types_or: [python, rst, markdown]
         args: ["--ignore-words", ".codespell-whitelist.txt"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: "v0.10.0.1"
+    rev: "v0.11.0.1"
     hooks:
       - id: shellcheck
         exclude: .*templ.sh
@@ -84,12 +89,12 @@ repos:
   #       exclude: .pre-commit-config.yaml
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.16
+    rev: v0.25
     hooks:
       - id: validate-pyproject
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.1
+    rev: 0.37.4
     hooks:
       - id: check-dependabot
       - id: check-github-workflows

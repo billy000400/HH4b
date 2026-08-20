@@ -22,49 +22,49 @@ def plot_fits(args):
     hist_label_map_inverse = OrderedDict(
         [
             ("qcd", "CMS_bbbb_hadronic_qcd_datadriven"),
-            ("diboson", "diboson"),
-            ("vjets", "vjets"),
+            ("dibosonvjets", ["ZZ", "other_diboson", "vjets"]),
             ("ttbar", "ttbar"),
-            ("vhtobb", "VH_hbb"),
-            ("tthtobb", "ttH_hbb"),
+            ("vhtthtobb", ["VH_hbb", "ttH_hbb"]),
             ("data", "data_obs"),
         ]
     )
 
     hist_label_map_inverse_sig = OrderedDict(
         [
-            ("hh4b", "ggHH_kl_1_kt_1_hbbhbb"),
-            ("hh4b-kl0", "ggHH_kl_0_kt_1_hbbhbb"),
-            ("hh4b-kl2p45", "ggHH_kl_2p45_kt_1_hbbhbb"),
-            ("hh4b-kl5", "ggHH_kl_5_kt_1_hbbhbb"),
-            ("vbfhh4b", "qqHH_CV_1_C2V_1_kl_1_hbbhbb"),
-            ("vbfhh4b-k2v0", "qqHH_CV_1_C2V_0_kl_1_hbbhbb"),
-            ("vbfhh4b-k2v2", "qqHH_CV_1_C2V_2_kl_1_hbbhbb"),
-            ("vbfhh4b-kl2", "qqHH_CV_1_C2V_1_kl_2_hbbhbb"),
-            ("vbfhh4b-kv1p74-k2v1p37-kl14p4", "qqHH_CV_1p74_C2V_1p37_kl_14p4_hbbhbb"),
-            ("vbfhh4b-kvm0p012-k2v0p03-kl10p2", "qqHH_CV_m0p012_C2V_0p03_kl_10p2_hbbhbb"),
-            ("vbfhh4b-kvm0p758-k2v1p44-klm19p3", "qqHH_CV_m0p758_C2V_1p44_kl_m19p3_hbbhbb"),
-            ("vbfhh4b-kvm0p962-k2v0p959-klm1p43", "qqHH_CV_m0p962_C2V_0p959_kl_m1p43_hbbhbb"),
-            ("vbfhh4b-kvm1p21-k2v1p94-klm0p94", "qqHH_CV_m1p21_C2V_1p94_kl_m0p94_hbbhbb"),
-            ("vbfhh4b-kvm1p6-k2v2p72-klm1p36", "qqHH_CV_m1p60_C2V_2p72_kl_m1p36_hbbhbb"),
-            ("vbfhh4b-kvm1p83-k2v3p57-klm3p39", "qqHH_CV_m1p83_C2V_3p57_kl_m3p39_hbbhbb"),
-            ("vbfhh4b-kvm2p12-k2v3p87-klm5p96", "qqHH_CV_m2p12_C2V_3p87_kl_m5p96_hbbhbb"),
+            ("hh4b", "ggHH_kl_1_kt_1_13p6TeV_hbbhbb"),
+            ("hh4b-kl0", "ggHH_kl_0_kt_1_13p6TeV_hbbhbb"),
+            ("hh4b-kl2p45", "ggHH_kl_2p45_kt_1_13p6TeV_hbbhbb"),
+            ("hh4b-kl5", "ggHH_kl_5_kt_1_13p6TeV_hbbhbb"),
+            ("vbfhh4b", "qqHH_CV_1_C2V_1_kl_1_13p6TeV_hbbhbb"),
+            ("vbfhh4b-k2v0", "qqHH_CV_1_C2V_0_kl_1_13p6TeV_hbbhbb"),
+            ("vbfhh4b-kv1p74-k2v1p37-kl14p4", "qqHH_CV_1p74_C2V_1p37_kl_14p4_13p6TeV_hbbhbb"),
+            ("vbfhh4b-kvm0p012-k2v0p03-kl10p2", "qqHH_CV_m0p012_C2V_0p03_kl_10p2_13p6TeV_hbbhbb"),
+            ("vbfhh4b-kvm0p758-k2v1p44-klm19p3", "qqHH_CV_m0p758_C2V_1p44_kl_m19p3_13p6TeV_hbbhbb"),
+            (
+                "vbfhh4b-kvm0p962-k2v0p959-klm1p43",
+                "qqHH_CV_m0p962_C2V_0p959_kl_m1p43_13p6TeV_hbbhbb",
+            ),
+            ("vbfhh4b-kvm1p21-k2v1p94-klm0p94", "qqHH_CV_m1p21_C2V_1p94_kl_m0p94_13p6TeV_hbbhbb"),
+            ("vbfhh4b-kvm1p6-k2v2p72-klm1p36", "qqHH_CV_m1p6_C2V_2p72_kl_m1p36_13p6TeV_hbbhbb"),
+            ("vbfhh4b-kvm1p83-k2v3p57-klm3p39", "qqHH_CV_m1p83_C2V_3p57_kl_m3p39_13p6TeV_hbbhbb"),
+            ("vbfhh4b-kvm2p12-k2v3p87-klm5p96", "qqHH_CV_m2p12_C2V_3p87_kl_m5p96_13p6TeV_hbbhbb"),
         ]
     )
-    sig_keys = ["hh4b", "vbfhh4b"] if not args.vbf_k2v0_signal else ["hh4b", "vbfhh4b-k2v0"]
+    sig_keys = (
+        ["hh4b", "vbfhh4b"] if not args.fit_file_k2v0 else ["hh4b", "vbfhh4b", "vbfhh4b-k2v0"]
+    )
     for key in sig_keys:
         hist_label_map_inverse[key] = hist_label_map_inverse_sig[key]
 
-    bkg_keys = ["qcd", "ttbar", "vhtobb", "tthtobb", "vjets", "diboson"]
-    bkg_order = ["diboson", "vjets", "tthtobb", "vhtobb", "ttbar", "qcd"]
+    bkg_keys = ["qcd", "ttbar", "vhtthtobb", "dibosonvjets"]
+    bkg_order = ["dibosonvjets", "vhtthtobb", "ttbar", "qcd"]
 
-    hist_label_map = {val: key for key, val in hist_label_map_inverse.items()}
-    samples = list(hist_label_map.values())
+    samples = list(hist_label_map_inverse.keys())
 
     if args.mass == "H2Msd":
         fit_shape_var = ShapeVar(
             "H2Msd",
-            r"Jet 2 $m_\mathrm{SD}$ (GeV)",
+            r"$m_\mathrm{SD}(H_{2})$ (GeV)",
             [16, 60, 220],
             reg=False,
             blind_window=[110, 140],
@@ -72,7 +72,7 @@ def plot_fits(args):
     else:
         fit_shape_var = ShapeVar(
             "H2PNetMass",
-            r"Jet 2 $m_\mathrm{reg}$ (GeV)",
+            r"$m_\mathrm{reg}(H_{2})$ (GeV)",
             [16, 60, 220],
             reg=True,
             blind_window=[110, 140],
@@ -82,37 +82,40 @@ def plot_fits(args):
 
     shapes = {
         "prefit": "Pre-Fit",
-        # "postfit": "S+B Post-Fit",
         "postfit": "B-only Post-Fit",
     }
+    if args.unblinded:
+        shapes["postfit"] = "S+B Post-Fit"
 
     selection_regions_labels = {
-        "passvbf": "Pass VBF",
-        "passbin1": "Pass Bin 1",
-        "passbin2": "Pass Bin 2",
-        "passbin3": "Pass Bin 3",
-        "fail": "Fail",
+        "passvbf": "qqHH SR",
+        "passbin1": "ggHH SR 1",
+        "passbin2": "ggHH SR 2",
+        "passbin3": "ggHH SR 3",
+        "fail": "QCD CR",
     }
     ylims = {
-        "passvbf": 10,
-        "passbin1": 10,
-        "passbin2": 60,
-        "passbin3": 2000,
-        "fail": 300000,
+        "passvbf": 36,
+        "passbin1": 30,
+        "passbin2": 120,
+        "passbin3": 900,
+        "fail": 1500000,
     }
 
     if args.regions == "all":
-        signal_regions = ["passbin1", "passbin2", "passbin3"]
+        signal_regions = ["passbin1", "passbin2", "passbin3", "fail"]
         if args.vbf_region:
             signal_regions = ["passvbf"] + signal_regions
     else:
         signal_regions = [args.regions]
-    bins = [*signal_regions, "fail"]
+    bins = signal_regions
     selection_regions = {key: selection_regions_labels[key] for key in bins}
 
     data_key = "data"
 
     file = uproot.open(args.fit_file)
+    if args.fit_file_k2v0:
+        file_k2v0 = uproot.open(args.fit_file_k2v0)
 
     print(file.keys())
     # build histograms
@@ -135,15 +138,33 @@ def plot_fits(args):
         for region in selection_regions:
             h = hists[shape][region]
             templates = file[f"{region}_{shape}"]
-            # print(templates)
+            if args.fit_file_k2v0:
+                templates_k2v0 = file_k2v0[f"{region}_{shape}"]
             for key, file_key in hist_label_map_inverse.items():
                 if key != data_key:
-                    if file_key not in templates:
-                        print(f"No {key} in {region}")
-                        continue
-
+                    if isinstance(file_key, list):
+                        # sum components
+                        values = None
+                        for fk in file_key:
+                            if fk not in templates:
+                                print(f"No {fk} in {region}")
+                                continue
+                            if values is None:
+                                values = templates[fk].values()
+                            else:
+                                values += templates[fk].values()
+                        if values is None:
+                            continue
+                    else:
+                        if file_key not in templates:
+                            print(f"No {key} in {region}")
+                            continue
+                        if key == "vbfhh4b-k2v0" and args.fit_file_k2v0:
+                            values = templates_k2v0[file_key].values()
+                        else:
+                            values = templates[file_key].values()
                     data_key_index = np.where(np.array(list(h.axes[0])) == key)[0][0]
-                    h.view(flow=False)[data_key_index, :] = templates[file_key].values()
+                    h.view(flow=False)[data_key_index, :] = values
 
             data_key_index = np.where(np.array(list(h.axes[0])) == data_key)[0][0]
             h.view(flow=False)[data_key_index, :] = np.nan_to_num(
@@ -151,14 +172,7 @@ def plot_fits(args):
             )
             bgerrs[shape][region] = templates["TotalBkg"].errors()
 
-            # data_errs[shape][region] = np.stack(
-            #    (
-            #        file[f"{region}_{shape}"]["data_obs"].errors(which="low")[1] * 10,
-            #        file[f"{region}_{shape}"]["data_obs"].errors(which="high")[1] * 10,
-            #    )
-            # )
-
-    year = "2022-2023"
+    year = "2022-2025"
     pass_ratio_ylims = [0, 2]
     fail_ratio_ylims = [0, 2]
 
@@ -168,15 +182,14 @@ def plot_fits(args):
         "postfit": True,
     }
 
-    for shape, shape_label in shapes.items():
+    for shape, _shape_label in shapes.items():
         for region, region_label in selection_regions.items():
             pass_region = region.startswith("pass")
             for shape_var in shape_vars:
-                # print(hists[shape][region])
                 plot_params = {
                     "hists": hists[shape][region],
                     "sig_keys": sig_keys,
-                    "sig_scale_dict": {key: signal_scale for key in sig_keys},
+                    "sig_scale_dict": dict(zip(sig_keys, signal_scale)),
                     "bg_keys": bkg_keys,
                     "bg_err": bgerrs[shape][region],
                     "bg_err_mcstat": bg_err_mcstat[shape],
@@ -185,17 +198,23 @@ def plot_fits(args):
                     "xlim": 220,
                     "xlim_low": 60,
                     "ratio_ylims": pass_ratio_ylims if pass_region else fail_ratio_ylims,
-                    "title": f"{shape_label} {region_label} Region",
+                    # "title": f"Approach-2, {region_label}",
+                    "title": region_label,
                     "name": f"{plot_dir}/{shape}_{region}_{shape_var.var}",
                     "bg_order": bkg_order,
                     "energy": 13.6,
-                    "add_pull": add_pull[shape],
+                    "add_pull": add_pull[shape] if pass_region else False,
+                    "prefit_hists": (
+                        hists["prefit"][region] if shape == "postfit" and pass_region else None
+                    ),
                     "show": False,
+                    "unblinded": args.unblinded,
+                    "cms_label": args.cms_label,
                 }
 
-                plotting.ratioHistPlot(**plot_params, data_err=True)
-                # FIXME
-                # plotting.ratioHistPlot(**plot_params, data_err=data_errs)
+                plotting.ratioHistPlot(
+                    **plot_params, data_err=True, hepdata=args.hepdata, figure=args.figure
+                )
 
 
 if __name__ == "__main__":
@@ -209,14 +228,22 @@ if __name__ == "__main__":
         required=True,
         type=str,
     )
+    parser.add_argument(
+        "--fit-file-k2v0",
+        help="fitdiagnostics output root file for k2v0 signal",
+        required=False,
+        type=str,
+    )
     parser.add_argument("--plots-dir", help="plots directory", type=str)
-    parser.add_argument("--signal-scale", help="scale signal by", default=1.0, type=float)
+    parser.add_argument(
+        "--signal-scale", help="scale signal by", default=1.0, nargs="+", type=float
+    )
     parser.add_argument(
         "--regions",
         default="all",
         type=str,
         help="regions to plot",
-        choices=["passbin1", "passbin2", "passbin3", "passvbf", "all"],
+        choices=["passbin1", "passbin2", "passbin3", "passvbf", "fail", "all"],
     )
     parser.add_argument(
         "--mass",
@@ -225,9 +252,16 @@ if __name__ == "__main__":
         choices=["H2Msd", "H2PNetMass"],
         help="mass variable to make template",
     )
+    parser.add_argument(
+        "--cms-label", type=str, default=None, choices=["Preliminary", "Supplementary", None]
+    )
+    parser.add_argument(
+        "--figure", type=str, default=None, help="figure number to put in hepdata tables"
+    )
 
-    run_utils.add_bool_arg(parser, "vbf-region", default=False, help="Include VBF region")
-    run_utils.add_bool_arg(parser, "vbf-k2v0-signal", default=False, help="Plot VBF k2v=0 signal")
+    run_utils.add_bool_arg(parser, "vbf-region", default=True, help="Include VBF region")
+    run_utils.add_bool_arg(parser, "unblinded", "unblinded so skip blinded parts", default=False)
+    run_utils.add_bool_arg(parser, "hepdata", "make hepdata files", default=False)
 
     args = parser.parse_args()
 

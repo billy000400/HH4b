@@ -10,6 +10,8 @@ from pathlib import Path
 import numpy as np
 from colorama import Fore, Style
 
+from HH4b.processors import bbbbSkimmer, ttSkimmer
+
 from .xsecs import xsecs
 
 
@@ -61,7 +63,8 @@ def check_branch(git_branch: str, git_user: str = "LPC-HH", allow_diff_local_rep
             sys.exit(1)
 
     # check that the local repo's latest commit matches that on github
-    remote_hash = subprocess.getoutput(f"git show origin/{git_branch} | head -n 1").split(" ")[1]
+    gitshow_output = subprocess.getoutput(f"git show --no-patch --format=%H origin/{git_branch}")
+    remote_hash = gitshow_output.strip().split("\n")[0]
     local_hash = subprocess.getoutput("git rev-parse HEAD")
 
     if remote_hash != local_hash:
@@ -136,8 +139,6 @@ def get_processor(
 ):
     # define processor
     if processor == "skimmer":
-        from HH4b.processors import bbbbSkimmer
-
         return bbbbSkimmer(
             xsecs=xsecs,
             save_systematics=save_systematics,
@@ -147,8 +148,6 @@ def get_processor(
         )
 
     if processor == "ttSkimmer":
-        from HH4b.processors import ttSkimmer
-
         return ttSkimmer(
             xsecs=xsecs,
             nano_version=nano_version,
@@ -169,13 +168,14 @@ def parse_common_args(parser):
         help="year",
         type=str,
         default="2022",
-        choices=["2018", "2022", "2022EE", "2023", "2023BPix"],
+        choices=["2018", "2022", "2022EE", "2023", "2023BPix", "2024", "2025"],
     )
     parser.add_argument(
         "--txbb",
         type=str,
         default="glopart-v2",
-        choices=["pnet-legacy", "pnet-v12", "glopart-v2"],
+        required=True,
+        choices=["pnet-legacy", "pnet-v12", "glopart-v2", "glopart-v3"],
         help="TXbb version to be used to order FatJets",
     )
     parser.add_argument(
@@ -192,6 +192,8 @@ def parse_common_args(parser):
             "v12",
             "v12_private",
             "v12v2_private",
+            "v14_25v2",
+            "v15",
         ],
         help="NanoAOD version",
     )

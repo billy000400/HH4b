@@ -17,14 +17,21 @@ from HH4b.hh_vars import (
     LUMI,
     bg_keys,
     data_key,
+    jec_shifts,
+    jecs,
     jmsr,
     jmsr_keys,
     jmsr_res,
+    jmsr_shifts,
     jmsr_values,
     sig_keys,
+    sig_keys_ggf,
+    sig_keys_vbf,
     syst_keys,
-    ttbarsfs_decorr_bdt_bins,
+    ttbarsfs_decorr_ggfbdt_bins,
     ttbarsfs_decorr_txbb_bins,
+    ttbarsfs_decorr_vbfbdt_bins,
+    txbb_strings,
     txbbsfs_decorr_pt_bins,
     txbbsfs_decorr_txbb_wps,
     years,
@@ -60,6 +67,16 @@ HLTs = {
         "AK8PFJet400_SoftDropMass40",
         "AK8PFJet425_SoftDropMass40",
     ],
+    "2024": [
+        "AK8PFJet230_SoftDropMass40_PNetBB0p06",
+        "AK8PFJet400_SoftDropMass30",
+        "AK8PFJet425_SoftDropMass30",
+    ],
+    "2025": [
+        "AK8PFJet230_SoftDropMass40_PNetBB0p06",
+        "AK8PFJet400_SoftDropMass30",
+        "AK8PFJet425_SoftDropMass30",
+    ],
 }
 
 
@@ -89,15 +106,12 @@ columns_to_load = {
     + [
         ("bbFatJetPNetTXbbLegacy", 2),
         ("bbFatJetPNetPXbbLegacy", 2),
-        ("bbFatJetPNetPQCDbLegacy", 2),
-        ("bbFatJetPNetPQCDbbLegacy", 2),
-        ("bbFatJetPNetPQCDothersLegacy", 2),
+        ("bbFatJetPNetPQCD0HFLegacy", 2),
+        ("bbFatJetPNetPQCD1HFLegacy", 2),
+        ("bbFatJetPNetPQCD2HFLegacy", 2),
         ("bbFatJetPNetMassLegacy", 2),
         ("bbFatJetPNetTXbb", 2),
         ("bbFatJetPNetMass", 2),
-        ("bbFatJetPNetQCD0HF", 2),
-        ("bbFatJetPNetQCD1HF", 2),
-        ("bbFatJetPNetQCD2HF", 2),
     ],
     "pnet-v12": columns_to_load_default
     + [
@@ -115,6 +129,16 @@ columns_to_load = {
         ("bbFatJetParTPQCD0HF", 2),
         ("bbFatJetParTPQCD1HF", 2),
         ("bbFatJetParTPQCD2HF", 2),
+        ("bbFatJetrawFactor", 2),
+    ],
+    "glopart-v3": columns_to_load_default
+    + [
+        ("bbFatJetParT3TXbb", 2),
+        ("bbFatJetParT3PQCD", 2),
+        ("bbFatJetParT3PXbb", 2),
+        ("bbFatJetParT3massGeneric", 2),
+        ("bbFatJetParT3massX2p", 2),
+        ("bbFatJetrawFactor", 2),
     ],
 }
 
@@ -145,64 +169,288 @@ filters_to_apply = {
             ("('bbFatJetPt', '1')", ">=", 250),
         ],
     ],
+    # ParT v3: same pT preselection as v2
+    "glopart-v3": [
+        [
+            ("('bbFatJetPt', '0')", ">=", 250),
+            ("('bbFatJetPt', '1')", ">=", 250),
+            # ("('bbFatJetParT3massX2p', '0')", ">=", 60),
+            # ("('bbFatJetParT3massX2p', '1')", ">=", 60),
+        ],
+    ],
 }
 
-load_columns_syst = []
-jecs = {
-    "JES": "JES",
-    "JER": "JER",
-}
-jec_shifts = []
-for key in jecs:
-    for shift in ["up", "down"]:
-        jec_shifts.append(f"{key}_{shift}")
+load_columns_syst = [
+    ("weight_pileupDown", 1),
+    ("weight_pileupUp", 1),
+    ("weight_FSRPartonShowerDown", 1),
+    ("weight_FSRPartonShowerUp", 1),
+    ("weight_ISRPartonShowerDown", 1),
+    ("weight_ISRPartonShowerUp", 1),
+]
+
 for jshift in jec_shifts:
     load_columns_syst += [
         (f"bbFatJetPt_{jshift}", 2),
         (f"VBFJetPt_{jshift}", 2),
     ]
 
-weight_shifts = {
-    "ttbarSF_pTjj": Syst(samples=["ttbar"], label="ttbar SF pTjj", years=years + ["2022-2023"]),
-    "ttbarSF_tau32": Syst(samples=["ttbar"], label="ttbar SF tau32", years=years + ["2022-2023"]),
-    "trigger": Syst(samples=sig_keys + bg_keys, label="Trigger", years=years + ["2022-2023"]),
-    "TXbbSF_correlated": Syst(
-        samples=sig_keys, label="TXbb SF correlated", years=years + ["2022-2023"]
-    ),
-    # "pileup": Syst(samples=sig_keys + bg_keys, label="Pileup"),
-    # "PDFalphaS": Syst(samples=sig_keys, label="PDF"),
-    # "QCDscale": Syst(samples=sig_keys, label="QCDscale"),
-    # "ISRPartonShower": Syst(samples=sig_keys_ggf + ["vjets"], label="ISR Parton Shower"),
-    # "FSRPartonShower": Syst(samples=sig_keys_ggf + ["vjets"], label="FSR Parton Shower"),
-}
+for jshift in jmsr_shifts:
+    load_columns_syst += [
+        (f"bbFatJetParTmassVis_{jshift}", 2),
+    ]
+load_columns_syst += [("bbFatJetParTmassVis_raw", 2)]
 
-for i in range(len(ttbarsfs_decorr_txbb_bins) - 1):
-    weight_shifts[
-        f"ttbarSF_Xbb_bin_{ttbarsfs_decorr_txbb_bins[i]}_{ttbarsfs_decorr_txbb_bins[i+1]}"
-    ] = Syst(
-        samples=["ttbar"],
-        label=f"ttbar SF Xbb bin [{ttbarsfs_decorr_txbb_bins[i]}, {ttbarsfs_decorr_txbb_bins[i+1]}]",
-        years=years + ["2022-2023"],
+# load scale weights for ttbar
+load_columns_ttbar = [
+    ("scale_weights", 6),
+]
+
+# TODO: remove after analysis
+load_columns_ttbar_gen = [
+    ("GenTopPt", 2),
+    ("GenTopEta", 2),
+    ("GenTopPhi", 2),
+    ("GenTopMass", 2),
+    ("GenTopW0Pt", 1),
+    ("GenTopW0Eta", 1),
+    ("GenTopW0Phi", 1),
+    ("GenTopW0Mass", 1),
+    ("GenTopW1Pt", 1),
+    ("GenTopW1Eta", 1),
+    ("GenTopW1Phi", 1),
+    ("GenTopW1Mass", 1),
+    ("bbFatJetTopMatch", 2),
+    ("bbFatJetTopMatchIndex", 2),
+    ("bbFatJetNumBMatchedTop1", 2),
+    ("bbFatJetNumBMatchedTop2", 2),
+    ("bbFatJetNumQMatchedTop1", 2),
+    ("bbFatJetNumQMatchedTop2", 2),
+]
+
+# load scale and pdf weights for ggf signal
+load_columns_ggf = [
+    ("scale_weights", 6),
+    ("pdf_weights", 103),
+    ("single_weight_genweight", 1),
+    ("GenHiggsPt", 2),
+    ("GenHiggsEta", 2),
+    ("GenHiggsPhi", 2),
+    ("GenHiggsMass", 2),
+]
+
+# load scale and pdf weights for vbf signal (missing alpha_s variations)
+load_columns_vbf = [
+    ("scale_weights", 6),
+    ("pdf_weights", 101),
+    ("single_weight_genweight", 1),
+    ("GenHiggsPt", 2),
+    ("GenHiggsEta", 2),
+    ("GenHiggsPhi", 2),
+    ("GenHiggsMass", 2),
+]
+
+# only the BG MC samples that are used in the fits
+fit_bgs = ["ttbar", "vhtobb", "zz", "nozzdiboson", "vjets", "tthtobb"]
+fit_mcs = sig_keys + fit_bgs
+
+
+def get_weight_shifts(txbb_version: str, bdt_version: str):
+    """Get weight shifts for systematics"""
+
+    weight_shifts = {
+        "ttbarSF_pTjj": Syst(samples=["ttbar"], label="ttbar SF pTjj", years=years + ["2022-2023"]),
+        "ttbarSF_tau32": Syst(
+            samples=["ttbar"], label="ttbar SF tau32", years=years + ["2022-2023"]
+        ),
+        "trigger": Syst(samples=sig_keys + bg_keys, label="Trigger", years=years + ["2022-2023"]),
+        "pileup": Syst(samples=fit_mcs, label="Pileup", years=years + ["2022-2023"]),
+        "scale": Syst(
+            samples=sig_keys + ["ttbar"],
+            label="QCDScaleAcc",
+            years=years + ["2022-2023"],
+        ),
+        "pdf": Syst(samples=sig_keys, label="PDFAcc", years=years + ["2022-2023"]),
+        "ISRPartonShower": Syst(
+            samples=fit_mcs, label="ISR Parton Shower", years=years + ["2022-2023"]
+        ),
+        "FSRPartonShower": Syst(
+            samples=fit_mcs, label="FSR Parton Shower", years=years + ["2022-2023"]
+        ),
+    }
+
+    ttsf_xbb_bins = ttbarsfs_decorr_txbb_bins.get(
+        txbb_version, ttbarsfs_decorr_txbb_bins["glopart-v2"]
     )
-
-for i in range(len(ttbarsfs_decorr_bdt_bins) - 1):
-    weight_shifts[
-        f"ttbarSF_BDT_bin_{ttbarsfs_decorr_bdt_bins[i]}_{ttbarsfs_decorr_bdt_bins[i+1]}"
-    ] = Syst(
-        samples=["ttbar"],
-        label=f"ttbar SF BDT bin [{ttbarsfs_decorr_bdt_bins[i]}, {ttbarsfs_decorr_bdt_bins[i+1]}]",
-        years=years + ["2022-2023"],
+    ttsf_ggfbdtshape_bins = ttbarsfs_decorr_ggfbdt_bins.get(
+        bdt_version, ttbarsfs_decorr_ggfbdt_bins["25Feb5_v13_glopartv2_rawmass"]
     )
+    TXbb_pt_corr_bins = txbbsfs_decorr_pt_bins.get(
+        txbb_version, txbbsfs_decorr_pt_bins["glopart-v2"]
+    )
+    TXbb_wps = txbbsfs_decorr_txbb_wps.get(txbb_version, txbbsfs_decorr_txbb_wps["glopart-v2"])
 
-for wp in txbbsfs_decorr_txbb_wps:
-    for j in range(len(txbbsfs_decorr_pt_bins[wp]) - 1):
-        weight_shifts[
-            f"TXbbSF_uncorrelated_{wp}_pT_bin_{txbbsfs_decorr_pt_bins[wp][j]}_{txbbsfs_decorr_pt_bins[wp][j+1]}"
-        ] = Syst(
-            samples=sig_keys,
-            label=f"TXbb SF uncorrelated {wp}, pT bin [{txbbsfs_decorr_pt_bins[wp][j]}, {txbbsfs_decorr_pt_bins[wp][j+1]}]",
+    for i in range(len(ttsf_xbb_bins) - 1):
+        weight_shifts[f"ttbarSF_Xbb_bin_{ttsf_xbb_bins[i]}_{ttsf_xbb_bins[i+1]}"] = Syst(
+            samples=["ttbar"],
+            label=f"ttbar SF Xbb bin [{ttsf_xbb_bins[i]}, {ttsf_xbb_bins[i+1]}]",
             years=years + ["2022-2023"],
         )
+
+    for i in range(len(ttsf_ggfbdtshape_bins) - 1):
+        weight_shifts[
+            f"ttbarSF_ggF_BDT_bin_{ttsf_ggfbdtshape_bins[i]}_{ttsf_ggfbdtshape_bins[i+1]}"
+        ] = Syst(
+            samples=["ttbar"],
+            label=f"ttbar SF ggF BDT bin [{ttsf_ggfbdtshape_bins[i]}, {ttsf_ggfbdtshape_bins[i+1]}]",
+            years=years + ["2022-2023"],
+        )
+
+    if bdt_version in ttbarsfs_decorr_vbfbdt_bins:
+        ttsf_vbfbdtshape_bins = ttbarsfs_decorr_vbfbdt_bins[bdt_version]
+        for i in range(len(ttsf_vbfbdtshape_bins) - 1):
+            weight_shifts[
+                f"ttbarSF_VBF_BDT_bin_{ttsf_vbfbdtshape_bins[i]}_{ttsf_vbfbdtshape_bins[i+1]}"
+            ] = Syst(
+                samples=["ttbar"],
+                label=f"ttbar SF VBF BDT bin [{ttsf_vbfbdtshape_bins[i]}, {ttsf_vbfbdtshape_bins[i+1]}]",
+                years=years + ["2022-2023"],
+            )
+
+    for wp in TXbb_wps:
+        for j in range(len(TXbb_pt_corr_bins[wp]) - 1):
+            weight_shifts[
+                f"TXbbSF_uncorrelated_{wp}_pT_bin_{TXbb_pt_corr_bins[wp][j]}_{TXbb_pt_corr_bins[wp][j+1]}"
+            ] = Syst(
+                samples=sig_keys + ["vhtobb", "zz", "novhhtobb", "tthtobb", "vjets", "nozzdiboson"],
+                label=f"TXbb SF uncorrelated {wp}, pT bin [{TXbb_pt_corr_bins[wp][j]}, {TXbb_pt_corr_bins[wp][j+1]}]",
+                years=years + ["2022-2023"],
+            )
+    return weight_shifts
+
+
+def _sum_over_years(templates: dict[str, dict[str, Hist]], years: list[str], key: str) -> Hist:
+    """Sum ``templates[year][key]`` over ``years``, tolerating per-year Sample-axis
+    differences. The Sample axes are unioned (preserving first-seen order); each year
+    is realigned to that union with missing samples zero-filled (so a sample present
+    only in some years, e.g. ``qcd`` absent from 2024/2025, sums over the years that
+    have it). Mismatched non-Sample axes (e.g. binning) still raise via the sum."""
+    hists = [templates[year][key] for year in years]
+
+    union = list(hists[0].axes[0])
+    seen = set(union)
+    for h in hists[1:]:
+        for sample in h.axes[0]:
+            if sample not in seen:
+                seen.add(sample)
+                union.append(sample)
+
+    aligned = [
+        h if list(h.axes[0]) == union else utils.align_sample_axis(h, union, fill_missing=True)
+        for h in hists
+    ]
+    return sum(aligned)
+
+
+def combine_templates(
+    templates: dict[str, dict[str, Hist]],
+    years: list[str],
+    region: str,
+    shift: str | None = None,
+) -> Hist:
+    """Sum a region's per-year templates into a single plot-ready histogram.
+
+    Weight-based systematics are stored as ``{sample}_{shift}_{up,down}`` Sample
+    categories inside the nominal histogram, so for those (and for the nominal,
+    ``shift=None``) this just sums across ``years``.
+
+    JEC/JMSR systematics (``shift`` in ``jecs`` or ``jmsr``) live in separate
+    per-year histograms keyed ``{region}_{shift}_{up,down}``; those are summed
+    across years, their samples renamed to ``{sample}_{shift}_{up,down}``, and
+    concatenated onto the nominal histogram so that ``plotting.sigErrRatioPlot``
+    can find the up/down categories.
+    """
+    nominal = _sum_over_years(templates, years, region)
+
+    if shift is None or (shift not in jecs and shift not in jmsr):
+        return nominal
+
+    combined = [nominal]
+    for direction in ["up", "down"]:
+        shifted = _sum_over_years(templates, years, f"{region}_{shift}_{direction}")
+        combined.append(utils.rename_sample_axis(shifted, f"_{shift}_{direction}"))
+
+    return utils.combine_hists(*combined)
+
+
+def shift_available(
+    templates: dict[str, dict[str, Hist]],
+    years: list[str],
+    region: str,
+    shift: str,
+    sample: str,
+) -> bool:
+    """Whether ``combine_templates`` can build ``shift`` for ``region``/``sample``.
+
+    JEC/JMSR shifts need ``{region}_{shift}_{up,down}`` histograms present for every
+    year; weight shifts need the ``{sample}_{shift}_{up,down}`` Sample categories in
+    the nominal histogram. Lets a driver skip systematics absent from a template set
+    (e.g. a JES variation that was never produced).
+    """
+    if shift in jecs or shift in jmsr:
+        return all(
+            f"{region}_{shift}_up" in templates[year]
+            and f"{region}_{shift}_down" in templates[year]
+            for year in years
+        )
+    nominal = templates[years[0]][region]
+    return f"{sample}_{shift}_up" in nominal.axes[0]
+
+
+def get_shape_systematics(
+    weight_shifts: dict,
+    sample: str,
+    include_jec: bool = True,
+    include_jmsr: bool = True,
+) -> list[str]:
+    """List the systematic shift names applicable to ``sample`` for shape plots.
+
+    Returns the weight shifts whose ``samples`` include ``sample``, followed by
+    the JEC and/or JMSR shift names.
+    """
+    shifts = [wshift for wshift, wsyst in weight_shifts.items() if sample in wsyst.samples]
+    if include_jec:
+        shifts += list(jecs)
+    if include_jmsr:
+        shifts += list(jmsr)
+    return shifts
+
+
+def compute_jmsr_variations(
+    templ: Hist,
+    sample_name: str,
+    year: str,
+    mass_obs: str = "bbFatJetParTmassVis",
+) -> dict[str, Hist]:
+    """Morph a 1D mass template with the JMS/JMR scale & resolution values.
+
+    Applies ``smorph`` to produce the nominally-smeared template plus the JMS and
+    JMR up/down variations for ``year``, returning a dict keyed ``nominal``,
+    ``jms_up``, ``jms_down``, ``jmr_up``, ``jmr_down``. This is the reusable form
+    of the JMS/JMR morphing cross-check from ``CombineTemplates.ipynb``.
+    """
+    # smorph pulls in rhalphalib (MorphHistW2), which is not a core/CI dependency
+    from HH4b.postprocessing.datacardHelpers import smorph  # noqa: PLC0415
+
+    jms = jmsr_values[mass_obs]["JMS"][year]
+    jmr = jmsr_values[mass_obs]["JMR"][year]
+    return {
+        "nominal": smorph(templ, sample_name, jms["nom"], jmr["nom"]),
+        "jms_up": smorph(templ, sample_name, jms["up"], jmr["nom"]),
+        "jms_down": smorph(templ, sample_name, jms["down"], jmr["nom"]),
+        "jmr_up": smorph(templ, sample_name, jms["nom"], jmr["up"]),
+        "jmr_down": smorph(templ, sample_name, jms["nom"], jmr["down"]),
+    }
 
 
 def load_run3_samples(
@@ -210,26 +458,69 @@ def load_run3_samples(
     year: str,
     samples_run3: dict[str, list[str]],
     reorder_txbb: bool,
-    txbb_str: str,
     load_systematics: bool,
     txbb_version: str,
     scale_and_smear: bool,
     mass_str: str,
+    bdt_version: str,
+    load_bdt_scores: bool = True,
+    extra_columns: list[tuple[str, int]] | None = None,
 ):
     assert txbb_version in [
         "pnet-v12",
         "pnet-legacy",
         "glopart-v2",
-    ], "txbb_version parameter must be pnet-v12, pnet-legacy, glopart-v2"
+        "glopart-v3",
+    ], "txbb_version parameter must be pnet-v12, pnet-legacy, glopart-v2, glopart-v3"
 
+    txbb_str = txbb_strings[txbb_version]
     filters = filters_to_apply[txbb_version]
-    load_columns = columns_to_load[txbb_version]
+    # Re-instantiate lists to avoid mutating global variables
+    load_columns = list(columns_to_load[txbb_version])
+    if extra_columns:
+        load_columns += extra_columns
+    load_columns_systematics = list(load_columns_syst)
+    if txbb_version == "glopart-v3":
+        load_columns_systematics = [
+            (
+                col.replace("bbFatJetParTmassVis", "bbFatJetParT3massX2p"),
+                ncols,
+            )
+            for col, ncols in load_columns_systematics
+        ]
+
+    if load_bdt_scores:
+        load_columns += [
+            ("bdt_score", 1),
+            ("bdt_score_vbf", 1),
+        ]
+        if load_systematics:
+            for jshift in jec_shifts + jmsr_shifts:
+                load_columns_systematics += [
+                    (f"bdt_score_{jshift}", 1),
+                    (f"bdt_score_vbf_{jshift}", 1),
+                ]
 
     # add HLTs to load columns
     load_columns_year = load_columns + [(hlt, 1) for hlt in HLTs[year]]
 
-    samples_syst = {
-        sample: samples_run3[year][sample] for sample in samples_run3[year] if sample in syst_keys
+    samples_syst_ggf = {
+        sample: samples_run3[year][sample]
+        for sample in samples_run3[year]
+        if (sample in syst_keys and sample in sig_keys_ggf)
+    }
+    samples_syst_vbf = {
+        sample: samples_run3[year][sample]
+        for sample in samples_run3[year]
+        if (sample in syst_keys and sample in sig_keys_vbf)
+    }
+    samples_ttbar = {
+        sample: samples_run3[year][sample] for sample in samples_run3[year] if (sample == "ttbar")
+    }
+    samples_syst_bg = {
+        sample: samples_run3[year][sample]
+        for sample in samples_run3[year]
+        if (sample in syst_keys and sample not in sig_keys + ["ttbar"])
     }
     samples_nosyst = {
         sample: samples_run3[year][sample]
@@ -237,14 +528,87 @@ def load_run3_samples(
         if sample not in syst_keys
     }
 
-    # add extra branches if needed
-    def add_rawmass(events_dict, mass_str):
-        for key in events_dict:
-            x = events_dict[key][mass_str].to_numpy(copy=True)
-            events_dict[key][(f"{mass_str}Raw", 0)] = x[:, 0]
-            events_dict[key][(f"{mass_str}Raw", 1)] = x[:, 1]
+    # load ggf samples
+    events_dict_syst_ggf = {
+        **utils.load_samples(
+            input_dir,
+            samples_syst_ggf,
+            year,
+            filters=filters,
+            columns=utils.format_columns(
+                load_columns_year + load_columns_systematics + load_columns_ggf
+                if load_systematics
+                else load_columns_year
+            ),
+            reorder_txbb=reorder_txbb,
+            txbb_str=txbb_str,
+            variations=True,
+            weight_shifts=get_weight_shifts(txbb_version, bdt_version),
+        ),
+    }
 
-    # load samples that do no need systematics (e.g. data)
+    # load vbf samples
+    events_dict_syst_vbf = {
+        **utils.load_samples(
+            input_dir,
+            samples_syst_vbf,
+            year,
+            filters=filters,
+            columns=utils.format_columns(
+                load_columns_year + load_columns_systematics + load_columns_vbf
+                if load_systematics
+                else load_columns_year
+            ),
+            reorder_txbb=reorder_txbb,
+            txbb_str=txbb_str,
+            variations=True,
+            weight_shifts=get_weight_shifts(txbb_version, bdt_version),
+        ),
+    }
+
+    # load ttbar samples
+    events_dict_ttbar = {
+        **utils.load_samples(
+            input_dir,
+            samples_ttbar,
+            year,
+            filters=filters,
+            # TODO: remove load_columns_ttbar_gen after analysis
+            columns=utils.format_columns(
+                load_columns_year
+                + load_columns_systematics
+                + load_columns_ttbar
+                + load_columns_ttbar_gen
+                if load_systematics
+                else load_columns_year + load_columns_ttbar_gen
+            ),
+            reorder_txbb=reorder_txbb,
+            txbb_str=txbb_str,
+            variations=True,
+            weight_shifts=get_weight_shifts(txbb_version, bdt_version),
+        ),
+    }
+
+    # load bkg samples that need systematics
+    events_dict_syst_bg = {
+        **utils.load_samples(
+            input_dir,
+            samples_syst_bg,
+            year,
+            filters=filters,
+            columns=utils.format_columns(
+                load_columns_year + load_columns_systematics
+                if load_systematics
+                else load_columns_year
+            ),
+            reorder_txbb=reorder_txbb,
+            txbb_str=txbb_str,
+            variations=True,
+            weight_shifts=get_weight_shifts(txbb_version, bdt_version),
+        ),
+    }
+
+    # load samples that do not need systematics (e.g. data)
     events_dict_nosyst = {
         **utils.load_samples(
             input_dir,
@@ -258,67 +622,61 @@ def load_run3_samples(
         ),
     }
 
-    # load samples that need systematics
-    events_dict_syst = {
-        **utils.load_samples(
-            input_dir,
-            samples_syst,
-            year,
-            filters=filters,
-            columns=utils.format_columns(
-                load_columns_year + load_columns_syst if load_systematics else load_columns_year
-            ),
-            reorder_txbb=reorder_txbb,
-            txbb_str=txbb_str,
-            variations=False,
-        ),
-    }
-
     if scale_and_smear:
-        add_rawmass(events_dict_nosyst, mass_str)
-        add_rawmass(events_dict_syst, mass_str)
-        events_dict_syst = scale_smear_mass(events_dict_syst, year, mass_str)
+        # re-run scaling and smearing of mass variables
+        events_dict_syst_bg = scale_smear_mass(events_dict_syst_bg, year, mass_str)
+        events_dict_syst_ggf = scale_smear_mass(events_dict_syst_ggf, year, mass_str)
+        events_dict_syst_vbf = scale_smear_mass(events_dict_syst_vbf, year, mass_str)
 
-    events_dict = {**events_dict_nosyst, **events_dict_syst}
+    events_dict = {
+        **events_dict_nosyst,
+        **events_dict_ttbar,
+        **events_dict_syst_bg,
+        **events_dict_syst_ggf,
+        **events_dict_syst_vbf,
+    }
 
     return events_dict
 
 
-def scale_smear_mass(events_dict: dict[str, pd.DataFrame], year: str, mass_str: str):
-    jms_nom = jmsr_values["JMS"][year]["nom"]
-    jmr_nom = jmsr_values["JMR"][year]["nom"]
+def scale_smear_mass(
+    events_dict: dict[str, pd.DataFrame], year: str, mass_str: str, morphing_formula: bool = False
+):
+    jms_nom = jmsr_values[mass_str]["JMS"][year]["nom"]
+    jmr_nom = jmsr_values[mass_str]["JMR"][year]["nom"]
     rng = np.random.default_rng(seed=42)
 
     # formula for smearing and scaling
-    for key in events_dict:
+    for key, events in events_dict.items():
         if key in jmsr_keys:
             print(f"scaling and smearing mass for {key} {year}")
-            x = events_dict[key][mass_str].to_numpy(copy=True)
-            x_smear = np.zeros_like(x)
+            x = events[f"{mass_str}_raw"].to_numpy(copy=True)
             random_smear = rng.standard_normal(size=x.shape)
-            x_smear = (
-                x
-                * jms_nom
-                * (1 + random_smear * np.sqrt(jmr_nom * jmr_nom - 1) * jmsr_res[key] / x)
+            x_smear = x * jms_nom
+            x_smear *= (
+                (1 + random_smear * np.sqrt(jmr_nom * jmr_nom - 1) * jmsr_res[mass_str][key] / x)
+                if morphing_formula
+                else (1 + random_smear * max(jmr_nom - 1, 0))
             )
 
             for i in range(2):
-                events_dict[key][(f"{mass_str}Raw", i)] = x[:, i]
-                events_dict[key][(mass_str, i)] = x_smear[:, i]
+                events[(mass_str, i)] = x_smear[:, i]
             for skey in jmsr:
                 for shift in ["up", "down"]:
                     if skey == "JMS":
-                        jms = jmsr_values["JMS"][year][shift]
+                        jms = jmsr_values[mass_str]["JMS"][year][shift]
                         jmr = jmr_nom
                     else:
                         jms = jms_nom
-                        jmr = jmsr_values["JMR"][year][shift]
-                    x_smear = np.zeros_like(x)
-                    x_smear = (
-                        x * jms * (1 + random_smear * np.sqrt(jmr * jmr - 1) * jmsr_res[key] / x)
+                        jmr = jmsr_values[mass_str]["JMR"][year][shift]
+                    x_smear = x * jms
+                    x_smear *= (
+                        (1 + random_smear * np.sqrt(jmr * jmr - 1) * jmsr_res[mass_str][key] / x)
+                        if morphing_formula
+                        else (1 + random_smear * max(jmr - 1, 0))
                     )
                     for i in range(2):
-                        events_dict[key][(f"{mass_str}_{skey}_{shift}", i)] = x_smear[:, i]
+                        events[(f"{mass_str}_{skey}_{shift}", i)] = x_smear[:, i]
     return events_dict
 
 
@@ -341,6 +699,7 @@ def combine_run3_samples(
 ):
     # create combined datasets
     lumi_total = np.sum([LUMI[year] for year in years_run3])
+    print(f"All years {years_run3}: {lumi_total}")
 
     if scale_processes is None:
         scale_processes = {}
@@ -357,18 +716,22 @@ def combine_run3_samples(
                 ]
             )
         else:
-            combined = pd.concat(
-                [
-                    events_dict_years[year][key].copy()
-                    for year in scale_processes[key]
-                    if year in years_run3
-                ]
-            )
-            lumi_scale = lumi_total / np.sum(
-                [LUMI[year] for year in scale_processes[key] if year in years_run3]
-            )
+            # only eras where this process was actually loaded (sample availability
+            # drifts across years, e.g. some VBF kappa points); keep the concat and
+            # the lumi-scale denominator consistent with what is really present
+            present_years = [
+                year
+                for year in scale_processes[key]
+                if year in years_run3 and key in events_dict_years[year]
+            ]
+            if not present_years:
+                print(f"WARNING: {key} not present in any of {scale_processes[key]}; skipping")
+                continue
+            combined = pd.concat([events_dict_years[year][key].copy() for year in present_years])
+            lumi_scale = lumi_total / np.sum([LUMI[year] for year in present_years])
+            print(f"LUMI available: {np.sum([LUMI[year] for year in present_years])}")
             scaled_by[key] = lumi_scale
-            print(f"Concatenate {scale_processes[key]}, scaling {key} by {lumi_scale:.2f}")
+            print(f"Concatenate {present_years}, scaling {key} by {lumi_scale:.2f}")
             combined[weight_key] = combined[weight_key] * lumi_scale
 
         events_combined[key] = combined
@@ -451,6 +814,27 @@ def _get_fill_data(
     }
 
 
+def _get_qcdvar_hists(
+    events: pd.DataFrame, shape_vars: list[ShapeVar], fill_data: dict, wshift: str
+):
+    """Get histograms for QCD scale and PDF variations"""
+    wkey = f"{wshift}_weights"
+    cols = sorted([int(col.split("_")[-1]) for col in events.columns if wkey in col])
+    h = Hist(
+        hist.axis.StrCategory([str(i) for i in cols], name="Sample"),
+        *[shape_var.axis for shape_var in shape_vars],
+        storage="weight",
+    )
+
+    for i in cols:
+        h.fill(
+            Sample=str(i),
+            **fill_data,
+            weight=events[f"{wkey}_{i}"],
+        )
+    return h
+
+
 def get_templates(
     events_dict: dict[str, pd.DataFrame],
     year: str,
@@ -474,6 +858,7 @@ def get_templates(
     show: bool = False,
     energy: float = 13.6,
     blind: bool = True,
+    all_hist_samples: list[str] | None = None,
 ) -> dict[str, Hist]:
     """
     (1) Makes histograms for each region in the ``selection_regions`` dictionary,
@@ -520,23 +905,30 @@ def get_templates(
 
         sig_events = {}
         for sig_key in sig_keys:
-            sig_events[sig_key] = deepcopy(events_dict[sig_key][sel[sig_key]])
+            if sig_key in events_dict:
+                # Boolean indexing already returns a new DataFrame; deepcopy is redundant
+                # and would recursively copy all underlying numpy arrays.
+                sig_events[sig_key] = events_dict[sig_key][sel[sig_key]]
 
         # set up samples
-        hist_samples = list(events_dict.keys())
+        if all_hist_samples is not None:
+            # Use pre-specified axis so per-sample histograms can be accumulated
+            hist_samples = list(all_hist_samples)
+        else:
+            hist_samples = list(events_dict.keys())
 
-        if not do_jshift:
-            # set up weight-based variations
-            for shift in ["down", "up"]:
-                if pass_region:
-                    for sig_key in sig_keys:
-                        hist_samples.append(f"{sig_key}_txbb_{shift}")
+            if not do_jshift:
+                # set up weight-based variations
+                for shift in ["down", "up"]:
+                    if pass_region:
+                        for sig_key in sig_keys:
+                            hist_samples.append(f"{sig_key}_txbb_{shift}")
 
-                for wshift, wsyst in weight_shifts.items():
-                    # add to the axis even if not applied to this year to make it easier to sum later
-                    for wsample in wsyst.samples:
-                        if wsample in events_dict:
-                            hist_samples.append(f"{wsample}_{wshift}_{shift}")
+                    for wshift, wsyst in weight_shifts.items():
+                        # add to the axis even if not applied to this year to make it easier to sum later
+                        for wsample in wsyst.samples:
+                            if wsample in events_dict:
+                                hist_samples.append(f"{wsample}_{wshift}_{shift}")
 
         # histograms
         h = Hist(
@@ -561,13 +953,37 @@ def get_templates(
                 # add weight variations
                 for wshift, wsyst in weight_shifts.items():
                     if sample in wsyst.samples and year in wsyst.years:
-                        for skey, shift in [("Down", "down"), ("Up", "up")]:
-                            # reweight based on diff between up/down and nominal weights
-                            h.fill(
-                                Sample=f"{sample}_{wshift}_{shift}",
-                                **fill_data,
-                                weight=events[f"weight_{wshift}{skey}"].to_numpy().squeeze(),
-                            )
+                        if wshift not in ["scale", "pdf"]:
+                            # fill histogram with weight variations
+                            for skey, shift in [("Down", "down"), ("Up", "up")]:
+                                h.fill(
+                                    Sample=f"{sample}_{wshift}_{shift}",
+                                    **fill_data,
+                                    weight=events[f"weight_{wshift}{skey}"].to_numpy().squeeze(),
+                                )
+                        else:
+                            # get histograms for all QCD scale and PDF variations
+                            whists = _get_qcdvar_hists(events, shape_vars, fill_data, wshift)
+
+                            if wshift == "scale":
+                                # renormalization / factorization scale uncertainty is the max/min envelope of the variations
+                                shape_up = np.max(whists.values(), axis=0)
+                                shape_down = np.min(whists.values(), axis=0)
+                            else:
+                                # pdf uncertainty is the norm of each variation (corresponding to 103 eigenvectors) - nominal
+                                nom_vals = h[sample, :].values()
+                                abs_unc = np.linalg.norm((whists.values() - nom_vals), axis=0)
+                                # cap at 100% uncertainty
+                                rel_unc = np.clip(abs_unc / nom_vals, 0, 1)
+                                shape_up = nom_vals * (1 + rel_unc)
+                                shape_down = nom_vals * (1 - rel_unc)
+
+                            h.values()[
+                                utils.get_key_index(h, f"{sample}_{wshift}_up"), :
+                            ] = shape_up
+                            h.values()[
+                                utils.get_key_index(h, f"{sample}_{wshift}_down"), :
+                            ] = shape_down
 
         if pass_region and blind:
             # blind signal mass windows in pass region in data
@@ -612,7 +1028,8 @@ def get_templates(
                         "tthtobb",
                         "vhtobb",
                         "singletop",
-                        "diboson",
+                        "zz",
+                        "nozzdiboson",
                         "vjets",
                         "vjetslnu",
                         "ttbar",
@@ -678,8 +1095,6 @@ def save_templates(
     templates: dict[str, Hist], template_file: Path, shape_var: ShapeVar, blind: bool = True
 ):
     """Creates blinded copies of each region's templates and saves a pickle of the templates"""
-
-    from copy import deepcopy
 
     blind_window = shape_var.blind_window
 

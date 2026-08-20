@@ -21,7 +21,7 @@ P4 = {
 PAD_VAL = -99999
 
 jecs = {
-    "JES": "JES",
+    "JES": "JES_jes",
     "JER": "JER",
     # split JECs (unused for now)
     # "JES_AbsoluteMPFBias": "JES_AbsoluteMPFBias",  # goes in Absolute
@@ -175,9 +175,9 @@ def select_dicts(dicts_list: list[dict[str, np.ndarray]], sel: np.ndarray):
 def remove_variation_suffix(var: str):
     """removes the variation suffix from the variable name"""
     if var.endswith("Down"):
-        return var.split("Down")[0]
+        return var.split("Down", maxsplit=1)[0]
     elif var.endswith("Up"):
-        return var.split("Up")[0]
+        return var.split("Up", maxsplit=1)[0]
     return var
 
 

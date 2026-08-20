@@ -33,6 +33,8 @@ class Syst:
     diff_samples: bool = False
 
     samples: list[str] = None  # samples affected by it
+    samples_corr: bool = True  # if it's correlated between samples
+    separate_prod_modes: bool = False  # if it's uncorrelated between ggF and VBF
     # in case of uncorrelated unc., which years to split into
     # dictionary of label -> list of years to keep correlated
     uncorr_years: dict[str, list[str]] = field(
@@ -46,6 +48,11 @@ class Syst:
         if isinstance(self.value, dict) and not (self.diff_regions or self.diff_samples):
             raise RuntimeError(
                 "Value for systematic is a dictionary but neither ``diff_regions`` nor ``diff_samples`` is set."
+            )
+
+        if self.decorrelate_regions and self.separate_prod_modes:
+            raise NotImplementedError(
+                "Decorrelated regions and separate production modes not implemented yet!"
             )
 
 
@@ -90,18 +97,34 @@ def rem_neg(template_dict: dict):
     return template_dict
 
 
-def sum_templates(template_dict: dict, years: list[str]):
-    """Sum templates across years"""
+def _reorder_hist_to_match(h: Hist, ref: Hist) -> Hist:
+    """Reorder h's sample axis to match ref for addition compatibility.
+    Different years may have different sample order (e.g. qcd/data swapped)."""
+    ref_samples = list(ref.axes[0])
+    if list(h.axes[0]) == ref_samples:
+        return h
+    storage = ref.storage_type() if callable(ref.storage_type) else ref.storage_type
+    new_hist = Hist(
+        hist.axis.StrCategory(ref_samples, name=ref.axes[0].name),
+        *ref.axes[1:],
+        storage=storage,
+    )
+    for sample in ref_samples:
+        if sample in h.axes[0]:
+            new_hist[sample, ...] = h[sample, ...].view(flow=True)
+    return new_hist
 
-    ttemplate = next(iter(template_dict.values()))  # sample templates from which to extract values
+
+def sum_templates(template_dict: dict, years: list[str]):
+    """Sum templates across years. Handles different sample axis order across years."""
+
+    ttemplate = next(iter(template_dict.values()))
+    ref_year = years[0]
     combined = {}
 
     for region in ttemplate:
-        thists = []
-
-        for year in years:
-            thists.append(template_dict[year][region])
-
+        ref_hist = template_dict[ref_year][region]
+        thists = [_reorder_hist_to_match(template_dict[year][region], ref_hist) for year in years]
         combined[region] = sum(thists)
 
     return combined
@@ -224,7 +247,7 @@ def get_effect_updown(
 def smass(sName):
     if sName in sig_keys_ggf + sig_keys_vbf:
         _mass = 125.0
-    elif sName in ["vhtobb", "diboson"]:
+    elif sName in ["vhtobb", "zz", "nozzdiboson"]:
         _mass = 80.379  # use W mass instead of Z mass = 91.
         # TODO: split W/Z processes?
     else:
@@ -236,7 +259,7 @@ def smorph(templ, sample_name, jms_value, jmr_value):
     if templ is None:
         return None
 
-    for sample_check in sig_keys_ggf + sig_keys_vbf + ["vhtobb", "diboson"]:
+    for sample_check in sig_keys_ggf + sig_keys_vbf + ["vhtobb", "zz", "nozzdiboson"]:
         if sample_check in sample_name:
             return MorphHistW2(templ).get(
                 shift=(jms_value - 1.0) * smass(sample_check), smear=jmr_value

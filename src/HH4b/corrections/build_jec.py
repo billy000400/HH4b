@@ -75,6 +75,31 @@ jet_factory = {
             "Summer23BPixPrompt23RunD_JRV1_MC_SF_AK4PFPuppi.jersf.txt.gz",
         ],
     ),
+    "2024mc": jet_factory_factory(
+        files=[
+            "Summer24Prompt24_V1_MC_L1FastJet_AK4PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_L2Relative_AK4PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_UncertaintySources_AK4PFPuppi.junc.txt.gz",
+            "Summer24Prompt24_V1_MC_Uncertainty_AK4PFPuppi.junc.txt.gz",
+            # Using 2023BPix JER based on https://cms-jerc.web.cern.ch/Recommendations/#2024_1
+            # TODO: Update to 2024 when available
+            "Summer23BPixPrompt23RunD_JRV1_MC_PtResolution_AK4PFPuppi.jr.txt.gz",
+            "Summer23BPixPrompt23RunD_JRV1_MC_SF_AK4PFPuppi.jersf.txt.gz",
+        ],
+    ),
+    # TODO: Update to 2025 when available
+    "2025mc": jet_factory_factory(
+        files=[
+            "Summer24Prompt24_V1_MC_L1FastJet_AK4PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_L2Relative_AK4PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_UncertaintySources_AK4PFPuppi.junc.txt.gz",
+            "Summer24Prompt24_V1_MC_Uncertainty_AK4PFPuppi.junc.txt.gz",
+            # Using 2023BPix JER based on https://cms-jerc.web.cern.ch/Recommendations/#2024_1
+            # TODO: Update to 2024 when available
+            "Summer23BPixPrompt23RunD_JRV1_MC_PtResolution_AK4PFPuppi.jr.txt.gz",
+            "Summer23BPixPrompt23RunD_JRV1_MC_SF_AK4PFPuppi.jersf.txt.gz",
+        ],
+    ),
     # data
     "2022_runCD": jet_factory_factory(
         files=[
@@ -106,7 +131,7 @@ jet_factory = {
     ),
     "2023_runCv123": jet_factory_factory(
         files=[
-            # "Summer23Prompt23_RunCv123_V1_DATA_L1FastJet_AK4PFPuppi.jec.txt.gz",
+            # "Summer23Prompt23RunCv123_V1_DATA_L1FastJet_AK4PFPuppi.jec.txt.gz",
             "Summer23Prompt23RunCv123_V1_DATA_L2Relative_AK4PFPuppi.jec.txt.gz",
             "Summer23Prompt23RunCv123_V1_DATA_L2L3Residual_AK4PFPuppi.jec.txt.gz",
         ],
@@ -120,13 +145,36 @@ jet_factory = {
     ),
     "2023BPix_runD": jet_factory_factory(
         files=[
-            # "Summer23BPixPrompt23_RunD_V1_DATA_L1FastJet_AK4PFPuppi.jec.txt.gz",
+            # "Summer23BPixPrompt23RunD_V1_DATA_L1FastJet_AK4PFPuppi.jec.txt.gz",
             "Summer23BPixPrompt23RunD_V1_DATA_L2Relative_AK4PFPuppi.jec.txt.gz",
             "Summer23BPixPrompt23RunD_V1_DATA_L2L3Residual_AK4PFPuppi.jec.txt.gz",
         ],
     ),
+    "2024": jet_factory_factory(
+        files=[
+            "Summer24Prompt24RunCnib1_V1_DATA_L2Relative_AK4PFPuppi.jec.txt.gz",
+            "Summer24Prompt24RunCnib1_V1_DATA_L2L3Residual_AK4PFPuppi.jec.txt.gz",
+        ],
+    ),
+    # TODO: Update to 2025 when available
+    "2025": jet_factory_factory(
+        files=[
+            "Summer24Prompt24RunCnib1_V1_DATA_L2Relative_AK4PFPuppi.jec.txt.gz",
+            "Summer24Prompt24RunCnib1_V1_DATA_L2L3Residual_AK4PFPuppi.jec.txt.gz",
+        ],
+    ),
 }
 
+# Using AK4PFPuppi JECs for AK8PFPuppi jets for those missing in 2024 based on https://cms-jerc.web.cern.ch/Recommendations
+# TODO: Update these to actual AK8PFPuppi when available:
+# [
+#     'Summer24Prompt24_V1_MC_L1FastJet_AK8PFPuppi.txt.gz',
+#     'Summer24Prompt24_V1_MC_L2Relative_AK8PFPuppi.txt.gz',
+#     'Summer24Prompt24_V1_MC_UncertaintySources_AK8PFPuppi.txt.gz',
+#     'Summer24Prompt24_V1_MC_Uncertainty_AK8PFPuppi.txt.gz',
+#     'Summer24Prompt24_RunCnib1_V1_DATA_L2Relative_AK8PFPuppi.txt.gz',
+#     'Summer24Prompt24_RunCnib1_V1_DATA_L2L3Residual_AK8PFPuppi.txt.gz'
+# ]
 fatjet_factory = {
     "2022mc": jet_factory_factory(
         files=[
@@ -164,6 +212,30 @@ fatjet_factory = {
             "Summer23BPixPrompt23_V1_MC_L2Relative_AK8PFPuppi.jec.txt.gz",
             "Summer23BPixPrompt23_V1_MC_UncertaintySources_AK8PFPuppi.junc.txt.gz",
             "Summer23BPixPrompt23_V1_MC_Uncertainty_AK8PFPuppi.junc.txt.gz",
+            "Summer23BPixPrompt23RunD_JRV1_MC_PtResolution_AK8PFPuppi.jr.txt.gz",
+            "Summer23BPixPrompt23RunD_JRV1_MC_SF_AK8PFPuppi.jersf.txt.gz",
+        ],
+    ),
+    "2024mc": jet_factory_factory(
+        files=[
+            "Summer24Prompt24_V1_MC_L1FastJet_AK8PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_L2Relative_AK8PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_UncertaintySources_AK8PFPuppi.junc.txt.gz",
+            "Summer24Prompt24_V1_MC_Uncertainty_AK8PFPuppi.junc.txt.gz",
+            # Using 2023BPix JER based on https://cms-jerc.web.cern.ch/Recommendations/#2024_1
+            # TODO: Update to 2024 when available
+            "Summer23BPixPrompt23RunD_JRV1_MC_PtResolution_AK8PFPuppi.jr.txt.gz",
+            "Summer23BPixPrompt23RunD_JRV1_MC_SF_AK8PFPuppi.jersf.txt.gz",
+        ],
+    ),
+    # TODO: Update to 2025 when available
+    "2025mc": jet_factory_factory(
+        files=[
+            "Summer24Prompt24_V1_MC_L1FastJet_AK8PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_L2Relative_AK8PFPuppi.jec.txt.gz",
+            "Summer24Prompt24_V1_MC_UncertaintySources_AK8PFPuppi.junc.txt.gz",
+            "Summer24Prompt24_V1_MC_Uncertainty_AK8PFPuppi.junc.txt.gz",
+            # Using 2023BPix JER based on https://cms-jerc.web.cern.ch/Recommendations/#2024_1
             "Summer23BPixPrompt23RunD_JRV1_MC_PtResolution_AK8PFPuppi.jr.txt.gz",
             "Summer23BPixPrompt23RunD_JRV1_MC_SF_AK8PFPuppi.jersf.txt.gz",
         ],
@@ -212,9 +284,22 @@ fatjet_factory = {
     ),
     "2023BPix_runD": jet_factory_factory(
         files=[
-            # "Summer23BPixPrompt23_RunD_V1_DATA_L1FastJet_AK8PFPuppi.jec.txt.gz",
+            # "Summer23BPixPrompt23RunD_V1_DATA_L1FastJet_AK8PFPuppi.jec.txt.gz",
             "Summer23BPixPrompt23RunD_V1_DATA_L2Relative_AK8PFPuppi.jec.txt.gz",
             "Summer23BPixPrompt23RunD_V1_DATA_L2L3Residual_AK8PFPuppi.jec.txt.gz",
+        ],
+    ),
+    "2024": jet_factory_factory(
+        files=[
+            "Summer24Prompt24RunCnib1_V1_DATA_L2Relative_AK8PFPuppi.jec.txt.gz",
+            "Summer24Prompt24RunCnib1_V1_DATA_L2L3Residual_AK8PFPuppi.jec.txt.gz",
+        ],
+    ),
+    # TODO: Update to 2025 when available
+    "2025": jet_factory_factory(
+        files=[
+            "Summer24Prompt24RunCnib1_V1_DATA_L2Relative_AK8PFPuppi.jec.txt.gz",
+            "Summer24Prompt24RunCnib1_V1_DATA_L2L3Residual_AK8PFPuppi.jec.txt.gz",
         ],
     ),
 }

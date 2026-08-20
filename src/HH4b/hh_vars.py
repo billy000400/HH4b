@@ -8,17 +8,32 @@ from __future__ import annotations
 
 from collections import OrderedDict
 
-years = ["2022", "2022EE", "2023", "2023BPix"]
+years = ["2022", "2022EE", "2023", "2023BPix", "2024", "2025"]
 
 # in pb^-1
 LUMI = {
-    "2022": 7971.4,
-    "2022EE": 26337.0,
-    "2022All": 34308.0,
-    "2023": 17650.0,
-    "2023BPix": 9451.0,
-    "2023All": 27101.0,
-    "2022-2023": 61409.0,
+    "2022": 7980.5,
+    "2022EE": 26671.6,
+    "2022All": 34652.1,
+    "2023": 18084.4,
+    "2023BPix": 9692.1,
+    "2023All": 27776.5,
+    "2022-2023": 62428.6,
+    "2022-2025": 261808.6,
+    "2024": 108960.0,
+    "2024C": 7240.0,
+    "2024D": 7960.0,
+    "2024E": 11320.0,
+    "2024F": 27760.0,
+    "2024G": 37770.0,
+    "2024H": 5440.0,
+    "2024I": 11470.0,
+    "2025C": 20780.0,
+    "2025E": 14000.0,
+    "2025D": 25290.0,
+    "2025F": 30350.0,
+    # TODO: 2025G ongoing
+    "2025": 90420.0,
     "2018": 59830.0,
     "2017": 41480.0,
     "2016": 36330.0,
@@ -30,19 +45,9 @@ DATA_SAMPLES = ["JetMET", "Muon", "EGamma"]
 
 # sample key -> list of samples or selectors
 common_samples_bg = {
-    "qcd": ["QCD_HT"],
+    "qcd": ["QCD-4Jets_HT", "QCD_HT-"],
     "data": [f"{key}_Run" for key in DATA_SAMPLES],
     "ttbar": ["TTto4Q", "TTto2L2Nu", "TTtoLNu2Q"],
-    "gghtobb": ["GluGluHto2B_PT-200_M-125"],
-    "vbfhtobb": ["VBFHto2B_M-125_dipoleRecoilOn"],
-    # "singletop": [
-    #     "TbarBQ_t-channel_4FS",
-    #     "TBbarQ_t-channel_4FS",
-    #     "TWminustoLNu2Q",
-    #     "TWminusto4Q",
-    #     "TbarWplustoLNu2Q",
-    #     "TbarWplusto4Q",
-    # ],
     "vhtobb": [
         "WplusH_Hto2B_Wto2Q_M-125",
         "WminusH_Hto2B_Wto2Q_M-125",
@@ -53,127 +58,211 @@ common_samples_bg = {
         # "ggZH_Hto2B_Zto2L_M-125",
         # "ggZH_Hto2B_Zto2Nu_M-125",
     ],
-    "novhhtobb": ["GluGluHto2B_PT-200_M-125", "VBFHto2B_M-125_dipoleRecoilOn"],
+    "novhhtobb": ["GluGluHto2B_PT-200_M-125", "VBFHto2B_M-125_dipoleRecoilOn", "VBFHto2B_M-125"],
     "tthtobb": ["ttHto2B_M-125"],
-    "diboson": ["ZZ", "WW", "WZ"],
-    "vjets": ["Wto2Q-3Jets_HT", "Zto2Q-4Jets_HT"],
+    # Use exact-match selectors to avoid pulling in ZZto*/WWto*/WZto* sub-samples.
+    "zz": ["ZZ?"],
+    "nozzdiboson": ["WW?", "WZ?"],
+    "vjets": [
+        "Wto2Q-2Jets_PTQQ",
+        "Wto2Q-2Jets_Bin-PTQQ",
+        "Zto2Q-2Jets_PTQQ",
+        "Zto2Q-2Jets_Bin-PTQQ",
+    ],
 }
 
 common_samples_sig = {}
 
 samples_run3_sig = {
     "2022": {
-        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-k2v2": ["VBFHHto4B_CV-1_C2V-2_C3-1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-kl2": ["VBFHHto4B_CV-1_C2V-1_C3-2_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-kv1p74-k2v1p37-kl14p4": [
-            "VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": [
-            "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": [
-            "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm0p962-k2v0p959-klm1p43": [
-            "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": [
-            "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": [
-            "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm2p12-k2v3p87-klm5p96": [
-            "VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
+        # Use prefix selectors so both short and fully qualified dataset names match.
+        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00"],
+        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00"],
+        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00"],
+        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00"],
+        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1"],
+        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1"],
+        "vbfhh4b-kv1p74-k2v1p37-kl14p4": ["VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4"],
+        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": ["VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2"],
+        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": ["VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3"],
+        "vbfhh4b-kvm0p962-k2v0p959-klm1p43": ["VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43"],
+        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": ["VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94"],
+        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": ["VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36"],
+        "vbfhh4b-kvm1p83-k2v3p57-klm3p39": ["VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39"],
+        # "vbfhh4b-kvm2p12-k2v3p87-klm5p96": ["VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96"],  # wrong sign, should be +2p12
+        "vbfhh4b-kv2p12-k2v3p87-klm5p96": ["VBFHHto4B_CV-2p12_C2V-3p87_C3-m5p96"],
     },
     "2022EE": {
-        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-k2v2": ["VBFHHto4B_CV-1_C2V-2_C3-1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-kl2": ["VBFHHto4B_CV-1_C2V-1_C3-2_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-kv1p74-k2v1p37-kl14p4": [
-            "VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": [
-            "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": [
-            "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm0p962-k2v0p959-klm1p43": [
-            "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": [
-            "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": [
-            "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
-        "vbfhh4b-kvm2p12-k2v3p87-klm5p96": [
-            "VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96_TuneCP5_13p6TeV_madgraph-pythia8"
-        ],
+        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00"],
+        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00"],
+        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00"],
+        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00"],
+        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1"],
+        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1"],
+        "vbfhh4b-kv1p74-k2v1p37-kl14p4": ["VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4"],
+        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": ["VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2"],
+        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": ["VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3"],
+        "vbfhh4b-kvm0p962-k2v0p959-klm1p43": ["VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43"],
+        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": ["VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94"],
+        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": ["VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36"],
+        "vbfhh4b-kvm1p83-k2v3p57-klm3p39": ["VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39"],
+        # "vbfhh4b-kvm2p12-k2v3p87-klm5p96": ["VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96"],  # wrong sign, should be +2p12
+        "vbfhh4b-kv2p12-k2v3p87-klm5p96": ["VBFHHto4B_CV-2p12_C2V-3p87_C3-m5p96"],
     },
     "2023": {
-        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
-        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
+        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00"],
+        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00"],
+        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00"],
+        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00"],
+        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1"],
+        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1"],
+        # nanov15 uses underscores, older data uses hyphens
         "vbfhh4b-kv1p74-k2v1p37-kl14p4": [
-            "VBFHHto4B_CV_1p74_C2V_1p37_C3_14p4_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV_1p74_C2V_1p37_C3_14p4",
+            "VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4",
+        ],
+        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": [
+            "VBFHHto4B_CV_m0p012_C2V_0p030_C3_10p2",
+            "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2",
+        ],
+        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": [
+            "VBFHHto4B_CV_m0p758_C2V_1p44_C3_m19p3",
+            "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3",
         ],
         "vbfhh4b-kvm0p962-k2v0p959-klm1p43": [
-            "VBFHHto4B_CV_m0p962_C2V_0p959_C3_m1p43_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV_m0p962_C2V_0p959_C3_m1p43",
+            "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43",
+        ],
+        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": [
+            "VBFHHto4B_CV_m1p21_C2V_1p94_C3_m0p94",
+            "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94",
+        ],
+        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": [
+            "VBFHHto4B_CV_m1p60_C2V_2p72_C3_m1p36",
+            "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36",
         ],
         "vbfhh4b-kvm1p83-k2v3p57-klm3p39": [
-            "VBFHHto4B_CV_m1p83_C2V_3p57_C3_m3p39_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV_m1p83_C2V_3p57_C3_m3p39",
+            "VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39",
         ],
-        "vbfhh4b-kvm2p12-k2v3p87-klm5p96": [
-            "VBFHHto4B_CV_m2p12_C2V_3p87_C3_m5p96_TuneCP5_13p6TeV_madgraph-pythia8"
+        # "vbfhh4b-kvm2p12-k2v3p87-klm5p96": [  # wrong sign, should be +2p12
+        #     "VBFHHto4B_CV_m2p12_C2V_3p87_C3_m5p96",
+        #     "VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96",
+        # ],
+        "vbfhh4b-kv2p12-k2v3p87-klm5p96": [
+            "VBFHHto4B_CV_2p12_C2V_3p87_C3_m5p96",
+            "VBFHHto4B_CV-2p12_C2V-3p87_C3-m5p96",
         ],
     },
     "2023BPix": {
-        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
-        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV?"],
+        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00"],
+        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00"],
+        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00"],
+        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00"],
+        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1"],
+        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1"],
+        # nanov15 uses underscores, older data uses hyphens
+        "vbfhh4b-kv1p74-k2v1p37-kl14p4": [
+            "VBFHHto4B_CV_1p74_C2V_1p37_C3_14p4",
+            "VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4",
+        ],
+        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": [
+            "VBFHHto4B_CV_m0p012_C2V_0p030_C3_10p2",
+            "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2",
+        ],
+        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": [
+            "VBFHHto4B_CV_m0p758_C2V_1p44_C3_m19p3",
+            "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3",
+        ],
+        "vbfhh4b-kvm0p962-k2v0p959-klm1p43": [
+            "VBFHHto4B_CV_m0p962_C2V_0p959_C3_m1p43",
+            "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43",
+        ],
+        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": [
+            "VBFHHto4B_CV_m1p21_C2V_1p94_C3_m0p94",
+            "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94",
+        ],
+        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": [
+            "VBFHHto4B_CV_m1p60_C2V_2p72_C3_m1p36",
+            "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36",
+        ],
+        "vbfhh4b-kvm1p83-k2v3p57-klm3p39": [
+            "VBFHHto4B_CV_m1p83_C2V_3p57_C3_m3p39",
+            "VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39",
+        ],
+        # "vbfhh4b-kvm2p12-k2v3p87-klm5p96": [  # wrong sign, should be +2p12
+        #     "VBFHHto4B_CV_m2p12_C2V_3p87_C3_m5p96",
+        #     "VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96",
+        # ],
+        "vbfhh4b-kv2p12-k2v3p87-klm5p96": [
+            "VBFHHto4B_CV_2p12_C2V_3p87_C3_m5p96",
+            "VBFHHto4B_CV-2p12_C2V-3p87_C3-m5p96",
+        ],
+    },
+    "2024": {
+        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
         "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
         "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
         "vbfhh4b-kv1p74-k2v1p37-kl14p4": [
-            "VBFHHto4B_CV_1p74_C2V_1p37_C3_14p4_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
         "vbfhh4b-kvm0p012-k2v0p03-kl10p2": [
-            "VBFHHto4B_CV_m0p012_C2V_0p030_C3_10p2_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
         "vbfhh4b-kvm0p758-k2v1p44-klm19p3": [
-            "VBFHHto4B_CV_m0p758_C2V_1p44_C3_m19p3_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
         "vbfhh4b-kvm0p962-k2v0p959-klm1p43": [
-            "VBFHHto4B_CV_m0p962_C2V_0p959_C3_m1p43_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
         "vbfhh4b-kvm1p21-k2v1p94-klm0p94": [
-            "VBFHHto4B_CV_m1p21_C2V_1p94_C3_m0p94_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
         "vbfhh4b-kvm1p6-k2v2p72-klm1p36": [
-            "VBFHHto4B_CV_m1p60_C2V_2p72_C3_m1p36_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
         "vbfhh4b-kvm1p83-k2v3p57-klm3p39": [
-            "VBFHHto4B_CV_m1p83_C2V_3p57_C3_m3p39_TuneCP5_13p6TeV_madgraph-pythia8"
+            "VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
-        "vbfhh4b-kvm2p12-k2v3p87-klm5p96": [
-            "VBFHHto4B_CV_m2p12_C2V_3p87_C3_m5p96_TuneCP5_13p6TeV_madgraph-pythia8"
+        "vbfhh4b-kv2p12-k2v3p87-klm5p96": [
+            "VBFHHto4B_CV-2p12_C2V-3p87_C3-m5p96_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+    },
+    "2025": {
+        # Using 2024 MC now since only 2024 MC samples are available
+        # TODO: change to 2025 once available
+        "hh4b": ["GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "hh4b-kl0": ["GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "hh4b-kl2p45": ["GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "hh4b-kl5": ["GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00_TuneCP5_13p6TeV"],
+        "vbfhh4b": ["VBFHHto4B_CV_1_C2V_1_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
+        "vbfhh4b-k2v0": ["VBFHHto4B_CV_1_C2V_0_C3_1_TuneCP5_13p6TeV_madgraph-pythia8"],
+        "vbfhh4b-kv1p74-k2v1p37-kl14p4": [
+            "VBFHHto4B_CV-1p74_C2V-1p37_C3-14p4_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kvm0p012-k2v0p03-kl10p2": [
+            "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kvm0p758-k2v1p44-klm19p3": [
+            "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kvm0p962-k2v0p959-klm1p43": [
+            "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kvm1p21-k2v1p94-klm0p94": [
+            "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kvm1p6-k2v2p72-klm1p36": [
+            "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kvm1p83-k2v3p57-klm3p39": [
+            "VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39_TuneCP5_13p6TeV_madgraph-pythia8"
+        ],
+        "vbfhh4b-kv2p12-k2v3p87-klm5p96": [
+            "VBFHHto4B_CV-2p12_C2V-3p87_C3-m5p96_TuneCP5_13p6TeV_madgraph-pythia8"
         ],
     },
 }
@@ -195,6 +284,31 @@ samples_run3 = {
         **common_samples_bg,
         **samples_run3_sig["2023BPix"],
     },
+    "2024": {
+        **common_samples_bg,
+        "data": [
+            "JetMET_Run2024B",
+            "JetMET_Run2024C",
+            "JetMET_Run2024D",
+            "JetMET_Run2024E",
+            "JetMET_Run2024F",
+            "JetMET_Run2024G",
+            "JetMET_Run2024H",
+            "JetMET_Run2024I",
+        ],
+        **samples_run3_sig["2024"],
+    },
+    "2025": {
+        **common_samples_bg,
+        "data": [
+            "JetMET_Run2025C",
+            # "JetMET_Run2025D",  # missing required AK8PFJet* trigger columns in current skim
+            "JetMET_Run2025E",
+            "JetMET_Run2025F",
+            "JetMET_Run2025G",
+        ],
+        **samples_run3_sig["2025"],
+    },
 }
 
 samples_2018 = {
@@ -202,13 +316,13 @@ samples_2018 = {
         "GluGlutoHHto4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8",
     ],
     "qcd": [
-        "QCD_HT-1000to1500-13TeV",
-        "QCD_HT-1500to2000-13TeV",
-        "QCD_HT-2000toInf-13TeV",
-        "QCD_HT-200to300-13TeV",
-        "QCD_HT-300to500-13TeV",
-        "QCD_HT-500to700-13TeV",
-        "QCD_HT-700to1000-13TeV",
+        "QCD-4Jets_HT-1000to1500-13TeV",
+        "QCD-4Jets_HT-1500to2000-13TeV",
+        "QCD-4Jets_HT-2000toInf-13TeV",
+        "QCD-4Jets_HT-200to300-13TeV",
+        "QCD-4Jets_HT-300to500-13TeV",
+        "QCD-4Jets_HT-500to700-13TeV",
+        "QCD-4Jets_HT-700to1000-13TeV",
     ],
     "data": [
         "Run2018A",
@@ -267,12 +381,15 @@ bg_keys = list(common_samples_bg.keys())
 bg_keys.remove("data")
 hbb_bg_keys = ["gghtobb", "vbfhtobb", "vhtobb", "tthtobb", "novhhtobb"]
 
-sig_keys_ggf = ["hh4b", "hh4b-kl0", "hh4b-kl2p45", "hh4b-kl5"]
+sig_keys_ggf = [
+    "hh4b",
+    "hh4b-kl0",
+    "hh4b-kl2p45",
+    "hh4b-kl5",
+]
 sig_keys_vbf = [
     "vbfhh4b",
     "vbfhh4b-k2v0",
-    "vbfhh4b-k2v2",
-    "vbfhh4b-kl2",
     "vbfhh4b-kv1p74-k2v1p37-kl14p4",
     "vbfhh4b-kvm0p012-k2v0p03-kl10p2",
     "vbfhh4b-kvm0p758-k2v1p44-klm19p3",
@@ -280,11 +397,11 @@ sig_keys_vbf = [
     "vbfhh4b-kvm1p21-k2v1p94-klm0p94",
     "vbfhh4b-kvm1p6-k2v2p72-klm1p36",
     "vbfhh4b-kvm1p83-k2v3p57-klm3p39",
-    "vbfhh4b-kvm2p12-k2v3p87-klm5p96",
+    "vbfhh4b-kv2p12-k2v3p87-klm5p96",
 ]
 sig_keys = sig_keys_ggf + sig_keys_vbf
 
-# keys that require running up/down systematics
+# bkg keys that require running up/down systematics
 syst_keys = sig_keys + bg_keys
 syst_keys.remove("qcd")
 
@@ -293,36 +410,6 @@ norm_preserving_weights = ["genweight", "pileup", "ISRPartonShower", "FSRPartonS
 jecs = {
     "JES": "JES",
     "JER": "JER",
-    # #####
-    # # including all sources
-    # #####
-    # "JES_AbsoluteMPFBias": "JES_AbsoluteMPFBias",
-    # "JES_AbsoluteScale": "JES_AbsoluteScale",
-    # "JES_AbsoluteStat": "JES_AbsoluteStat",
-    # "JES_FlavorQCD": "JES_FlavorQCD",
-    # "JES_Fragmentation": "JES_Fragmentation",
-    # "JES_PileUpDataMC": "JES_PileUpDataMC",
-    # "JES_PileUpPtBB": "JES_PileUpPtBB",
-    # "JES_PileUpPtEC1": "JES_PileUpPtEC1",
-    # "JES_PileUpPtEC2": "JES_PileUpPtEC2",
-    # "JES_PileUpPtHF": "JES_PileUpPtHF",
-    # "JES_PileUpPtRef": "JES_PileUpPtRef",
-    # "JES_RelativeFSR": "JES_RelativeFSR",
-    # "JES_RelativeJEREC1": "JES_RelativeJEREC1",
-    # "JES_RelativeJEREC2": "JES_RelativeJEREC2",
-    # "JES_RelativeJERHF": "JES_RelativeJERHF",
-    # "JES_RelativePtBB": "JES_RelativePtBB",
-    # "JES_RelativePtEC1": "JES_RelativePtEC1",
-    # "JES_RelativePtEC2": "JES_RelativePtEC2",
-    # "JES_RelativePtHF": "JES_RelativePtHF",
-    # "JES_RelativeBal": "JES_RelativeBal",
-    # "JES_RelativeSample": "JES_RelativeSample",
-    # "JES_RelativeStatEC": "JES_RelativeStatEC",
-    # "JES_RelativeStatFSR": "JES_RelativeStatFSR",
-    # "JES_RelativeStatHF": "JES_RelativeStatHF",
-    # "JES_SinglePionHCAL": "JES_SinglePionHCAL",
-    # "JES_SinglePionECAL": "JES_SinglePionECAL",
-    # "JES_TimePtEta": "JES_TimePtEta",
 }
 
 jec_shifts = []
@@ -362,6 +449,7 @@ jec_vars = [
 # variables affected by JMS/JMR
 jmsr_vars = [
     "bbFatJetPNetMassLegacy",
+    "bbFatJetParTmassVis",
     "bdt_score",
     "bdt_score_vbf",
     "HHmass",
@@ -375,28 +463,80 @@ jmsr_vars = [
 ]
 
 jmsr_values = {}
-jmsr_values["JMR"] = {
+jmsr_values["bbFatJetPNetMassLegacy"] = {}
+jmsr_values["bbFatJetPNetMassLegacy"]["JMR"] = {
     "2022": {"nom": 1.13, "down": 1.06, "up": 1.20},
     "2022EE": {"nom": 1.20, "down": 1.15, "up": 1.25},
     "2023": {"nom": 1.20, "down": 1.16, "up": 1.24},
     "2023BPix": {"nom": 1.16, "down": 1.09, "up": 1.23},
+    "2024": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
+    "2025": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
 }
-jmsr_values["JMS"] = {
+jmsr_values["bbFatJetPNetMassLegacy"]["JMS"] = {
     "2022": {"nom": 1.015, "down": 1.010, "up": 1.020},
     "2022EE": {"nom": 1.021, "down": 1.018, "up": 1.024},
     "2023": {"nom": 0.999, "down": 0.996, "up": 1.003},
     "2023BPix": {"nom": 0.974, "down": 0.970, "up": 0.980},
+    "2024": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
+    "2025": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
 }
-jmsr_keys = sig_keys + ["vhtobb", "diboson"]
-jmsr_res = {sig_key: 14.4 for sig_key in sig_keys}
-jmsr_res["vhtobb"] = 14.4 * 80.0 / 125.0
-jmsr_res["diboson"] = 14.4 * 80.0 / 125.0
+jmsr_values["bbFatJetParTmassVis"] = {}
+# numbers from template-morphing fit
+# jmsr_values["bbFatJetParTmassVis"]["JMR"] = {
+#     "2022": {"nom": 1.14, "down": 1.12, "up": 1.16},
+#     "2022EE": {"nom": 1.14, "down": 1.12, "up": 1.16},
+#     "2023": {"nom": 1.095, "down": 1.052, "up": 1.139},
+#     "2023BPix": {"nom": 1.095, "down": 1.052, "up": 1.139},
+# }
+# jmsr_values["bbFatJetParTmassVis"]["JMS"] = {
+#     "2022": {"nom": 1.015, "down": 1.0102, "up": 1.020},
+#     "2022EE": {"nom": 1.015, "down": 1.0102, "up": 1.020},
+#     "2023": {"nom": 0.974, "down": 0.967, "up": 0.981},
+#     "2023BPix": {"nom": 0.974, "down": 0.967, "up": 0.981},
+# }
+# numbers from weighted template fit
+jmsr_values["bbFatJetParTmassVis"]["JMR"] = {
+    "2022": {"nom": 1.0354, "down": 1.028, "up": 1.042},
+    "2022EE": {"nom": 1.0354, "down": 1.028, "up": 1.042},
+    "2023": {"nom": 1.0335, "down": 1.025, "up": 1.042},
+    "2023BPix": {"nom": 1.0335, "down": 1.025, "up": 1.042},
+    "2024": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
+    "2025": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
+}
+jmsr_values["bbFatJetParTmassVis"]["JMS"] = {
+    "2022": {"nom": 1.011, "down": 1.007, "up": 1.014},
+    "2022EE": {"nom": 1.011, "down": 1.007, "up": 1.014},
+    "2023": {"nom": 0.9867, "down": 0.983, "up": 0.9903},
+    "2023BPix": {"nom": 0.9867, "down": 0.983, "up": 0.9903},
+    "2024": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
+    "2025": {"nom": 1.0, "down": 1.0, "up": 1.0},  # TODO: placeholder for future
+}
+jmsr_keys = sig_keys + ["vhtobb", "zz", "nozzdiboson"]
+jmsr_res = {}
+jmsr_res["bbFatJetPNetMassLegacy"] = dict.fromkeys(sig_keys, 14.4)
+jmsr_res["bbFatJetPNetMassLegacy"]["vhtobb"] = 14.4 * 80.0 / 125.0
+jmsr_res["bbFatJetPNetMassLegacy"]["zz"] = 14.4 * 80.0 / 125.0
+jmsr_res["bbFatJetPNetMassLegacy"]["nozzdiboson"] = 14.4 * 80.0 / 125.0
+jmsr_res["bbFatJetParTmassVis"] = dict.fromkeys(sig_keys, 10.7)
+jmsr_res["bbFatJetParTmassVis"]["vhtobb"] = 10.7 * 80.0 / 125.0
+jmsr_res["bbFatJetParTmassVis"]["zz"] = 10.7 * 80.0 / 125.0
+jmsr_res["bbFatJetParTmassVis"]["nozzdiboson"] = 10.7 * 80.0 / 125.0
+
+ttbarsfs_decorr_txbb_bins = {}
+ttbarsfs_decorr_txbb_bins["pnet-legacy"] = [0, 0.8, 0.94, 0.99, 1]
+ttbarsfs_decorr_txbb_bins["glopart-v2"] = [0, 0.31, 0.7, 0.8, 0.87, 0.92, 0.96, 1]
+ttbarsfs_decorr_txbb_bins["glopart-v3"] = ttbarsfs_decorr_txbb_bins["glopart-v2"]
+ttbarsfs_decorr_ggfbdt_bins = {}
+ttbarsfs_decorr_ggfbdt_bins["24May31_lr_0p02_md_8_AK4Away"] = [0.03, 0.3, 0.5, 0.7, 0.93, 1.0]
+ttbarsfs_decorr_ggfbdt_bins["24Nov7_v5_glopartv2_rawmass"] = [0.03, 0.6375, 0.9075, 1.0]
+ttbarsfs_decorr_ggfbdt_bins["25Feb5_v13_glopartv2_rawmass"] = [0.03, 0.755, 0.94, 1.0]
+ttbarsfs_decorr_vbfbdt_bins = {}
+ttbarsfs_decorr_vbfbdt_bins["24Nov7_v5_glopartv2_rawmass"] = [0.975, 1]
+ttbarsfs_decorr_vbfbdt_bins["25Feb5_v13_glopartv2_rawmass"] = [0.9667, 1.0]
 
 
-ttbarsfs_decorr_txbb_bins = [0, 0.8, 0.94, 0.99, 1]
-ttbarsfs_decorr_bdt_bins = [0.03, 0.3, 0.5, 0.7, 0.93, 1.0]
-
-txbbsfs_decorr_txbb_wps = OrderedDict(
+txbbsfs_decorr_txbb_wps = {}
+txbbsfs_decorr_txbb_wps["pnet-legacy"] = OrderedDict(
     [
         ("WP6", [0.92, 0.95]),
         ("WP5", [0.95, 0.975]),
@@ -406,8 +546,18 @@ txbbsfs_decorr_txbb_wps = OrderedDict(
         ("WP1", [0.998, 1]),
     ]
 )
+txbbsfs_decorr_txbb_wps["glopart-v2"] = OrderedDict(
+    [
+        ("WP4", [0.3, 0.95]),
+        ("WP3", [0.95, 0.975]),
+        ("WP2", [0.975, 0.99]),
+        ("WP1", [0.99, 1]),
+    ]
+)
+txbbsfs_decorr_txbb_wps["glopart-v3"] = txbbsfs_decorr_txbb_wps["glopart-v2"]
 
-txbbsfs_decorr_pt_bins = OrderedDict(
+txbbsfs_decorr_pt_bins = {}
+txbbsfs_decorr_pt_bins["pnet-legacy"] = OrderedDict(
     [
         ("WP6", [200, 250, 300, 400, 500, 100000]),
         ("WP5", [200, 250, 300, 400, 500, 100000]),
@@ -417,3 +567,28 @@ txbbsfs_decorr_pt_bins = OrderedDict(
         ("WP1", [200, 400, 100000]),
     ]
 )
+txbbsfs_decorr_pt_bins["glopart-v2"] = OrderedDict(
+    [
+        ("WP4", [250, 450, 100000]),
+        ("WP3", [250, 450, 100000]),
+        ("WP2", [250, 450, 100000]),
+        ("WP1", [250, 450, 100000]),
+    ]
+)
+txbbsfs_decorr_pt_bins["glopart-v3"] = txbbsfs_decorr_pt_bins["glopart-v2"]
+
+txbb_strings = {
+    "pnet-legacy": "bbFatJetPNetTXbbLegacy",
+    "pnet-v12": "bbFatJetPNetTXbb",
+    "glopart-v2": "bbFatJetParTTXbb",
+    # ParT v3 ntuples (new): use ParT3 TXbb branch
+    "glopart-v3": "bbFatJetParT3TXbb",
+}
+
+mreg_strings = {
+    "pnet-legacy": "bbFatJetPNetMassLegacy",
+    "pnet-v12": "bbFatJetPNetMass",
+    "glopart-v2": "bbFatJetParTmassVis",
+    # ParT v3 ntuples: use X2p ParT3 mass
+    "glopart-v3": "bbFatJetParT3massX2p",
+}
